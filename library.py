@@ -26,26 +26,43 @@ import logbook
 log = logbook.Logger('intuition.library')
 
 
-from neuronquant import FollowTrend,RegularRebalance
-from neuronquant import StochasticGradientDescent
-from neuronquant import DualMovingAverage,VolumeWeightAveragePrice,Momentum,MovingAverageCrossover
-from neuronquant import AutoAdjustingStopLoss
-from neuronquant import MarkovGenerator
-from neuronquant import StddevBased
-from neuronquant import Constant
-from neuronquant import Fair
-from neuronquant import GlobalMinimumVariance
-from neuronquant import OptimalFrontier
-from neuronquant import CSVSource
-from neuronquant import DBPriceSource
-from neuronquant import QuandlSource
-from neuronquant import YahooPriceSource,YahooOHLCSource
-from neuronquant import EquitiesLiveSource
-from neuronquant import ForexLiveSource
+from intuition.modules.strategies.followers import BuyAndHold,FollowTrend,RegularRebalance
+from intuition.modules.strategies.machinelearning import StochasticGradientDescent
+from intuition.modules.strategies.movingaverage import DualMovingAverage,VolumeWeightAveragePrice,Momentum,MovingAverageCrossover
+from intuition.modules.strategies.orderbased import AutoAdjustingStopLoss
+from intuition.modules.strategies.patate import MarkovGenerator
+from intuition.modules.strategies.stddev import StddevBased
+from intuition.modules.managers.constant import Constant
+from intuition.modules.managers.fair import Fair
+from intuition.modules.managers.gmv import GlobalMinimumVariance
+from intuition.modules.managers.optimalfrontier import OptimalFrontier
+from intuition.modules.sources.backtest.csv import CSVSource
+from intuition.modules.sources.backtest.quandl import QuandlSource
+from intuition.modules.sources.backtest.yahoostock import YahooPriceSource,YahooOHLCSource
+from intuition.modules.sources.live.equities import EquitiesLiveSource
+from intuition.modules.sources.live.forex import ForexLiveSource
 
 
-algorithms = {'FollowTrend': FollowTrend,'RegularRebalance': RegularRebalance,'StochasticGradientDescent': StochasticGradientDescent,'DualMovingAverage': DualMovingAverage,'VolumeWeightAveragePrice': VolumeWeightAveragePrice,'Momentum': Momentum,'MovingAverageCrossover': MovingAverageCrossover,'AutoAdjustingStopLoss': AutoAdjustingStopLoss,'MarkovGenerator': MarkovGenerator,'StddevBased': StddevBased,}
+algorithms = {'BuyAndHold': BuyAndHold,'FollowTrend': FollowTrend,'RegularRebalance': RegularRebalance,'StochasticGradientDescent': StochasticGradientDescent,'DualMovingAverage': DualMovingAverage,'VolumeWeightAveragePrice': VolumeWeightAveragePrice,'Momentum': Momentum,'MovingAverageCrossover': MovingAverageCrossover,'AutoAdjustingStopLoss': AutoAdjustingStopLoss,'MarkovGenerator': MarkovGenerator,'StddevBased': StddevBased,}
 
 portfolio_managers = {'Constant': Constant,'Fair': Fair,'GlobalMinimumVariance': GlobalMinimumVariance,'OptimalFrontier': OptimalFrontier,}
 
-data_sources = {}
+data_sources = {'CSVSource': CSVSource,'QuandlSource': QuandlSource,'YahooPriceSource': YahooPriceSource,'YahooOHLCSource': YahooOHLCSource,'EquitiesLiveSource': EquitiesLiveSource,'ForexLiveSource': ForexLiveSource,}
+
+
+#TODO optimization algos
+
+def check_availability(algo, manager, source):
+  if algo not in algorithms:
+    raise NotImplementedError('Algorithm {} not available or implemented'.format(algo))
+  log.debug('Algorithm {} available, getting a reference on it.'.format(algo))
+
+  if (manager) and (manager not in portfolio_managers):
+    raise NotImplementedError('Manager {} not available or implemented'.format(manager))
+  log.debug('Manager {} available, getting a reference on it.'.format(manager))
+
+  if (source) and (source not in data_sources):
+    raise NotImplementedError('Source {} not available or implemented'.format(source))
+  log.debug('Source {} available'.format(source))
+
+  return True

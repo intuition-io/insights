@@ -15,7 +15,7 @@
 
 
 from zipline.algorithm import TradingAlgorithm
-from neuronquant.zipline.algorithm import QuantitativeTrading
+from intuition.zipline.algorithm import QuantitativeTrading
 #import statsmodels.api as sm
 from zipline.transforms import batch_transform
 import numpy as np
@@ -31,7 +31,7 @@ class BuyAndHold(QuantitativeTrading):
         #NOTE can't use it here, no self.manager yet. Issue ?
         #     Could configure every common parameters in Backtester engine
         #     and use setupe_strategie as an update
-        #self.manager.setup_strategie({'commission_cost': self.commission.cost})
+        #self.manager.setup_strategy({'commission_cost': self.commission.cost})
         self.debug = properties.get('debug', False)
         self.save = properties.get('save', False)
 

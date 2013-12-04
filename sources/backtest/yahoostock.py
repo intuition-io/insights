@@ -17,11 +17,15 @@
 Tools to generate data sources.
 """
 import pandas as pd
+import logbook
 
-from neuronquant.tmpdata.remote import Remote
+from intuition.data.remote import Remote
 
 from zipline.gens.utils import hash_args
 from zipline.sources.data_source import DataSource
+
+
+log = logbook.Logger('intuition.source.backtest.yahoo')
 
 
 class YahooPriceSource(DataSource):
@@ -148,7 +152,6 @@ class YahooOHLCSource(DataSource):
 
     def raw_data_gen(self):
         self.data = self._get()
-        import ipdb; ipdb.set_trace()
         for dt in self.data.major_axis:
             df = self.data.major_xs(dt)
             for sid, series in df.iterkv():

@@ -17,7 +17,7 @@
 from zipline.algorithm import TradingAlgorithm
 
 
-class {{ strategie }}(TradingAlgorithm):
+class {{ strategy }}(TradingAlgorithm):
     ''' Template class '''
     def initialize(self, properties):
         self.debug = properties.get('debug', False)

@@ -33,9 +33,9 @@ class Constant(PortfolioManager):
             date: datetime.timestamp
                 Date signals were emitted
             to_buy: dict(...)
-                Symbols with their strength to buy triggered by the strategie signals
+                Symbols with their strength to buy triggered by the strategy signals
             to_sell: dict(...)
-                Symbols with their strength to sell triggered by the strategie signals
+                Symbols with their strength to sell triggered by the strategy signals
             parameters: dict(...)
                 Custom user parameters
                 An algo field in it stores data from the user-

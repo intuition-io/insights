@@ -68,7 +68,7 @@ class Metric(object):
 
         # No evoluation in manager (Constant) configuration
         # We try here to optimize the algorithm parameters
-        strategie = {'manager': {'name': 'Xavier Bruhiere',
+        strategy = {'manager': {'name': 'Xavier Bruhiere',
                                  'load_backup': 0,
                                  'max_weight': 0.4,
                                  'buy_amount': 200,
@@ -80,7 +80,7 @@ class Metric(object):
                      }
         try:
             # Run backtest with all configuration dictionnaries
-            analyzes = self.engine.run(self.data, self.configuration, strategie, self.context)
+            analyzes = self.engine.run(self.data, self.configuration, strategy, self.context)
 
             # Get back summary performance dictionnary
             risk_metrics = analyzes.overall_metrics()
@@ -111,7 +111,7 @@ if __name__ == "__main__":
     Quick and dirty interface for running
     genetic optimization process
     '''
-    parser = argparse.ArgumentParser(description='Trading strategie optimization through genetic algorithm')
+    parser = argparse.ArgumentParser(description='Trading strategy optimization through genetic algorithm')
     parser.add_argument('-v', '--version', action='version', version='%(prog)s v0.8.1 Licence rien du tout', help='Print program version')
     parser.add_argument('-p', '--popsize', type=int, action='store', default=10, required=False, help='number of chromosomes in a population')
     parser.add_argument('-e', '--elitism', type=float, action='store', default=0.2, required=False, help='% of best chromosomes kept as is for the next generation')

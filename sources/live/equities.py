@@ -14,9 +14,6 @@
 # limitations under the License.
 
 
-"""
-Tools to generate data sources.
-"""
 import sys
 import time
 import pytz
@@ -26,11 +23,12 @@ import pandas as pd
 from zipline.gens.utils import hash_args
 from zipline.sources.data_source import DataSource
 
-from neuronquant.tmpdata.remote import Remote
-from neuronquant.data.datafeed import DataFeed
+from intuition.data.remote import Remote
 
 import logbook
-log = logbook.Logger('DataLiveSource')
+
+
+log = logbook.Logger('intuition.sources.live.equities')
 
 
 class EquitiesLiveSource(DataSource):
@@ -62,7 +60,6 @@ class EquitiesLiveSource(DataSource):
         self._raw_data = None
 
         self.remote = Remote()
-        self.feed = DataFeed()
 
     @property
     def mapping(self):

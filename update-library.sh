@@ -31,7 +31,7 @@ for path in ${contrib_index[@]}; do
 
         class_names=$(cat $file | grep "^class" | \
           awk -F " " '{print $2}' | \
-          awk -F "(" '{if (($2 == "TradingAlgorithm):") || ($2 == "PortfolioManager):") || ($2 == "DataSource):")) print $1}')
+          awk -F "(" '{if (($2 == "TradingAlgorithm):")  || ($2 == "QuantitativeTrading):") || ($2 == "PortfolioManager):") || ($2 == "DataSource):")) print $1}')
 
         if [[ $class_names == "" ]]; then
           continue
@@ -44,14 +44,15 @@ for path in ${contrib_index[@]}; do
           elif [[ $path == *"strategies"* ]]; then
             echo "adding algorithm $class to library"
             algos_dict+="'$class': $class,"
-          elif [[ $path == *"data"* ]]; then
+          elif [[ $path == *"sources"* ]]; then
             echo "adding data source $class to library"
             sources_dict+="'$class': $class,"
           fi
         done
 
         class_names=$(echo $class_names | tr " " ", ")
-        file_path=$(echo $file | tr "/" "." | awk -F "neuronquant" '{print "neuronquant"$2}' | awk -F ".py" '{print $1}')
+        file_path=$(echo $file | tr "/" "." | awk -F "intuition" \
+          '{print "intuition"$3}' | awk -F ".py" '{print $1}')
         imports+="from $file_path import $class_names"
         imports+="-"
       fi
@@ -101,16 +102,16 @@ echo "
 #TODO optimization algos
 
 def check_availability(algo, manager, source):
-if algo not in algorithms:
-  raise NotImplementedError('Algorithm {} not available or implemented'.format(algo))
+  if algo not in algorithms:
+    raise NotImplementedError('Algorithm {} not available or implemented'.format(algo))
   log.debug('Algorithm {} available, getting a reference on it.'.format(algo))
 
   if (manager) and (manager not in portfolio_managers):
     raise NotImplementedError('Manager {} not available or implemented'.format(manager))
-    log.debug('Manager {} available, getting a reference on it.'.format(manager))
+  log.debug('Manager {} available, getting a reference on it.'.format(manager))
 
-    if (source) and (source not in data_sources):
-      raise NotImplementedError('Source {} not available or implemented'.format(source))
-      log.debug('Source {} available'.format(source))
+  if (source) and (source not in data_sources):
+    raise NotImplementedError('Source {} not available or implemented'.format(source))
+  log.debug('Source {} available'.format(source))
 
-      return True" >> "strateg_library.py"
+  return True" >> "${LIBRARY}"

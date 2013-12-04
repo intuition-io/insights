@@ -22,9 +22,11 @@ from datetime import datetime
 
 from zipline.data.treasuries import get_treasury_data
 #from zipline.data.benchmarks import get_benchmark_returns
-from zipline.protocol import DailyReturn
+#from zipline.protocol import DailyReturn
+import collections
+DailyReturn = collections.namedtuple('DailyReturn', ['date', 'returns'])
 
-import neuronquant.utils.datautils as datautils
+import intuition.utils.datautils as datautils
 
 from operator import attrgetter
 

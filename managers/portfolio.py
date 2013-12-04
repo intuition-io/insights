@@ -19,25 +19,26 @@ import logbook
 import json
 import os
 
-from neuronquant.data.datafeed import DataFeed
-from neuronquant.tmpdata.remote import Remote
-from neuronquant.utils import to_dict
+#from neuronquant.data.datafeed import DataFeed
+from intuition.data.remote import Remote
+from intuition.utils import to_dict
 
 import zipline.protocol as zp
 
 #TODO dashboard is now a component of the labo project
 #from neuronquant.network.dashboard import Dashboard
 
-from neuronquant.tmpdata.extractor import Extractor
+#from intuition.data.extractor import Extractor
 
 CREDENTIALS_PATH = '/'.join((os.environ['QTRADE'], 'config', 'default.json'))
 sql = json.load(open(CREDENTIALS_PATH, 'r'))['mysql']
-extractor = Extractor('mysql://{}:{}@{}/{}'.format(
-    sql['user'], sql['password'], sql['hostname'], sql['database']))
+#extractor = Extractor('mysql://{}:{}@{}/{}'.format(
+    #sql['user'], sql['password'], sql['hostname'], sql['database']))
 #extractor = Extractor('mysql://xavier:quantrade@localhost/stock_data')
 metrics_fields = ['Information', 'Returns', 'MaxDrawdown', 'SortinoRatio', 'Period', 'Volatility', 'BenchmarkVolatility', 'Beta', 'ExcessReturn', 'TreasuryReturns', 'SharpeRatio', 'Date', 'Alpha', 'BenchmarkReturns', 'Name']
 
 
+'''
 def save_metrics_snapshot(name, dt, cmr):
     #TODO Save Transactions
     #data = extractor('INSERT INTO Transactions () VALUES ()')
@@ -55,13 +56,16 @@ def save_metrics_snapshot(name, dt, cmr):
             cmr[key] = 0
     query = 'INSERT INTO Metrics ({}) VALUES ({})'
     extractor(query.format(', '.join(metrics_fields), ', '.join(map(str, cmr.values()))))
+'''
 
 
+'''
 def clean_previous_trades(portfolio_name):
     #extractor('DELETE FROM Positions WHERE PortfolioName=\'{}\''.format(portfolio_name))
     extractor('DELETE FROM Portfolios where Name=\'{}\''.format(portfolio_name))
     extractor('DELETE FROM Metrics where Name=\'{}\''.format(portfolio_name))
     #TODO Clean previous widgets
+'''
 
 
 #FIXME Extractor is for test purpose, data module will change
@@ -69,7 +73,7 @@ class PortfolioManager(object):
     '''
     Manages portfolio during simulation, and stays aware of the situation
     through the update() method. It is configured through zmq message (manager
-    field) or QuanTrade/config/managers.json file.
+    field) or ~/.intuition/plugins.json file.
 
     User strategies call it with a dictionnnary of detected opportunities (i.e.
     buy or sell signals).  Then the optimize function computes assets
@@ -107,7 +111,7 @@ class PortfolioManager(object):
         super(PortfolioManager, self).__init__()
 
         # Easy mysql access
-        self.datafeed  = DataFeed()
+        #self.datafeed  = DataFeed()
 
         # Zipline portfolio object, updated during simulation with self.date
         self.portfolio = None
@@ -127,9 +131,9 @@ class PortfolioManager(object):
         self.android   = configuration.get('android', False) & self.connected
 
         # Delete from database data with the same portfolio name
-        if configuration.get('clean', True):
-            self.log.info('Cleaning previous trades.')
-            clean_previous_trades(self.name)
+        #if configuration.get('clean', True):
+            #self.log.info('Cleaning previous trades.')
+            #clean_previous_trades(self.name)
 
         # Run the server if the engine didn't, while it is asked for
         if 'server' in configuration and self.connected:
@@ -169,8 +173,8 @@ class PortfolioManager(object):
 
         if save:
             self.save_portfolio(portfolio)
-            if metrics is not None:
-                save_metrics_snapshot(self.name, self.date, metrics)
+            #if metrics is not None:
+                #save_metrics_snapshot(self.name, self.date, metrics)
 
         # Delete sold items and add new ones on dashboard
         #if widgets:
@@ -266,7 +270,7 @@ class PortfolioManager(object):
 
         return orderBook
 
-    def setup_strategie(self, parameters):
+    def setup_strategy(self, parameters):
         '''
         General parameters or user settings
         (maw_weigth, max_assets, max_frequency, commission cost)
@@ -291,7 +295,7 @@ class PortfolioManager(object):
         ___________________________________________
         '''
         self.log.debug('Saving portfolio in database')
-        self.datafeed.stock_db.save_portfolio(portfolio, self.name, self.date)
+        #self.datafeed.stock_db.save_portfolio(portfolio, self.name, self.date)
 
     def load_portfolio(self, name):
         '''
@@ -307,7 +311,8 @@ class PortfolioManager(object):
         '''
         self.log.info('Loading portfolio {} from database'.foramt(name))
         # Get the portfolio as a pandas Serie
-        db_pf = self.datafeed.saved_portfolios(name)
+        #db_pf = self.datafeed.saved_portfolios(name)
+        db_pf = []
 
         # Create empty Portfolio object to be filled
         portfolio = zp.Portfolio()

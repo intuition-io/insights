@@ -14,9 +14,6 @@
 # limitations under the License.
 
 
-"""
-Tools to generate data sources.
-"""
 import pandas as pd
 
 from zipline.gens.utils import hash_args
@@ -25,7 +22,9 @@ from zipline.sources.data_source import DataSource
 import os
 import pytz
 import logbook
-log = logbook.Logger('DataLiveSource')
+
+
+log = logbook.Logger('intuition.source.backtest.csv')
 
 
 class CSVSource(DataSource):

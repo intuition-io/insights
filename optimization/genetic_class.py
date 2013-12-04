@@ -56,14 +56,14 @@ def runBacktest(genes):
     sell_on_event = round(buy_on_event * genes['buy_rate'] / 100)
     '''-----------------------------------------------    Running    -----'''
     print('\n-- Running backetester, algorithm: {}\n'.format('DualMA'))
-    strategie = Backtester('DualMA',
+    strategy = Backtester('DualMA',
                            short_window=short_window,
                            long_window=long_window,
                            amount=50000,
                            buy_on_event=buy_on_event,
                            sell_on_event=sell_on_event)
-    #results = strategie.run(data, start, end)
-    score   = strategie.portfolio.returns
+    #results = strategy.run(data, start, end)
+    score   = strategy.portfolio.returns
     print('-------------------------------------> Returns performance: {}'.format(score))
     return 30 + score
 

@@ -21,7 +21,11 @@ import pandas as pd
 from zipline.gens.utils import hash_args
 from zipline.sources.data_source import DataSource
 
-from neuronquant.data.datafeed import DataFeed
+from intuition.data.quandl import DataQuandl
+import logbook
+
+
+log = logbook.Logger('intuition.source.backtest.quandl')
 
 
 class QuandlSource(DataSource):
@@ -39,7 +43,8 @@ class QuandlSource(DataSource):
     """
 
     def __init__(self, data_descriptor, **kwargs):
-        assert isinstance(data_descriptor['index'], pd.tseries.index.DatetimeIndex)
+        assert isinstance(data_descriptor['index'],
+                          pd.tseries.index.DatetimeIndex)
 
         self.data_descriptor = data_descriptor
         # Unpack config dictionary with default values.
@@ -52,20 +57,24 @@ class QuandlSource(DataSource):
 
         self._raw_data = None
 
-        self.feed = DataFeed()
+        # API key must be provided here or store in the environment
+        # (QUANDL_API_KEY)
+        self.feed = DataQuandl()
 
     @property
     def mapping(self):
         mapping = {
             'dt': (lambda x: x, 'dt'),
             'sid': (lambda x: x, 'sid'),
-            'price': (float, 'Adjusted Close'),
+            #'price': (float, 'Adjusted Close'),
+            'price': (float, 'Close'),
             'volume': (int, 'Volume'),
         }
 
         # Add additional fields.
         for field_name in self.data:
-            if field_name in ['Adjusted Close', 'Volume', 'dt', 'sid']:
+            #if field_name in ['Adjusted Close', 'Volume', 'dt', 'sid']:
+            if field_name in ['Close', 'Volume', 'dt', 'sid']:
                 continue
             mapping[field_name] = (lambda x: x, field_name)
 
@@ -76,15 +85,13 @@ class QuandlSource(DataSource):
         return self.arg_string
 
     def _get(self):
-        #TODO Test here for one value, make it later a panel
+        #TODO Works here for one value, make it later a panel
         assert len(self.sids) == 1
-        # Try to set quandl api key, stored in default config file
-        self.feed._search_quandlkey()
 
-        return self.feed.fetch_quandl(self.sids[0],
-            start_date=self.start,
-            end_date=self.end,
-            returns='pandas')
+        return self.feed.fetch(self.sids[0],
+                               start_date = self.start,
+                               end_date   = self.end,
+                               returns    = 'pandas')
 
     def raw_data_gen(self):
         self.data = self._get()

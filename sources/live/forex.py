@@ -25,10 +25,10 @@ import pandas as pd
 from zipline.gens.utils import hash_args
 from zipline.sources.data_source import DataSource
 
-from neuronquant.data.forex import ConnectTrueFX
+from intuition.data.forex import ConnectTrueFX
 
 import logbook
-log = logbook.Logger('ForexLiveSource')
+log = logbook.Logger('intuition.ForexLiveSource')
 
 
 class ForexLiveSource(DataSource):

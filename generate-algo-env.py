@@ -20,7 +20,7 @@
 '''QuanTrade.
 
 Usage:
-  generate_algo_env.py --author=<name> --strategie=<name> [--manager=<name>] [--year=<xxxx>]
+  generate_algo_env.py --author=<name> --strategy=<name> [--manager=<name>] [--year=<xxxx>]
   generate_algo_env.py (-h | --help)
   generate_algo_env.py --version
 
@@ -28,7 +28,7 @@ Options:
   -h --help           Show this screen.
   --version           Show version.
   --author=<name>     Author of the algorithm
-  --strategie=<name>  Strategie name
+  --strategy=<name>  Strategie name
   --manager=<name>    Manager name
   --year=<xxxx>       Current year for copyright [default: 2013].
 
@@ -63,7 +63,7 @@ if __name__ == '__main__':
     arguments = docopt(__doc__, version='New algorithm environment generator')
 
     completion = {'author': arguments['--author'],
-                  'strategie': arguments['--strategie'],
+                  'strategy': arguments['--strategy'],
                   'year': arguments['--year']}
     print(completion)
     generate_from_template(completion, 'strategy.tpl', 'test.py')
