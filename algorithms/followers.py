@@ -14,8 +14,7 @@
 # limitations under the License.
 
 
-from zipline.algorithm import TradingAlgorithm
-from intuition.zipline.algorithm import QuantitativeTrading
+from intuition.zipline.algorithm import TradingFactory
 #import statsmodels.api as sm
 from zipline.transforms import batch_transform
 import numpy as np
@@ -23,8 +22,7 @@ import numpy as np
 
 #TODO Should handle in parameter all of the set_*
 #TODO stop_trading or process_instruction are common methods
-#class BuyAndHold(TradingAlgorithm):
-class BuyAndHold(QuantitativeTrading):
+class BuyAndHold(TradingFactory):
     '''Simpliest algorithm ever, just buy a stock at the first frame'''
     #NOTE test of a new configuration passing
     def initialize(self, properties):
@@ -40,25 +38,31 @@ class BuyAndHold(QuantitativeTrading):
     def handle_data(self, data):
         self.loops += 1
         signals = {}
-        ''' ----------------------------------------------------------    Init   --'''
+
+        if self.debug:
+            print('\n' + 79 * '=')
+            print self.portfolio
+            print(79 * '=' + '\n')
+
+        ''' ---------------------------------------------------    Init   --'''
         if self.initialized:
             user_instruction = self.manager.update(
-                    self.portfolio,
-                    self.datetime,
-                    self.perf_tracker.cumulative_risk_metrics.to_dict(),
-                    save=self.save,
-                    widgets=False)
+                self.portfolio,
+                self.datetime,
+                self.perf_tracker.cumulative_risk_metrics.to_dict(),
+                save=self.save,
+                widgets=False)
             self.process_instruction(user_instruction)
         else:
             # Perf_tracker need at least a turn to have an index
             self.initialized = True
 
         if self.loops == 2:
-            ''' ------------------------------------------------------    Scan   --'''
+            ''' -----------------------------------------------    Scan   --'''
             for ticker in data:
                 signals[ticker] = data[ticker].price
 
-        ''' ----------------------------------------------------------   Orders  --'''
+        ''' ---------------------------------------------------   Orders  --'''
         if signals:
             orderBook = self.manager.trade_signals_handler(signals)
             for stock in orderBook:
@@ -80,7 +84,8 @@ class BuyAndHold(QuantitativeTrading):
     #NOTE self.done flag could be used to avoid in zipline waist of computation
     #TODO Anyway should find a more elegant way
     def stop_trading(self):
-        ''' Convenient method to stop calling user algorithm and just finish the simulation'''
+        ''' Convenient method to stop calling user algorithm and just finish
+        the simulation'''
         self.logger.info('Trader out of the market')
         #NOTE Selling every open positions ?
         # Saving the portfolio in database, eventually for reuse
@@ -107,7 +112,7 @@ def ols_transform(data):
 
 
 # http://nbviewer.ipython.org/4631031
-class FollowTrend(TradingAlgorithm):
+class FollowTrend(TradingFactory):
     def initialize(self, properties):
 
         self.debug = properties.get('debug', False)
@@ -163,7 +168,7 @@ class FollowTrend(TradingAlgorithm):
                 sell=self.sell)
 
 
-class RegularRebalance(TradingAlgorithm):
+class RegularRebalance(TradingFactory):
 
     # https://www.quantopian.com/posts/global-minimum-variance-portfolio?c=1
     # For this example, we're going to write a simple momentum script.  When the 

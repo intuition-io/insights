@@ -9,9 +9,9 @@ data_path="$PWD/sources"
 LIBRARY="library.py"
 # )
 
-#contrib_index=( "strategies" "managers")
+#contrib_index=( "algorithms" "managers")
 contrib_index=()
-contrib_index+=("$algorithmic_path/strategies")
+contrib_index+=("$algorithmic_path/algorithms")
 contrib_index+=("$algorithmic_path/managers")
 contrib_index+=("$data_path/backtest")
 contrib_index+=("$data_path/live")
@@ -41,7 +41,7 @@ for path in ${contrib_index[@]}; do
           if [[ $path == *"managers"* ]]; then
             echo "adding manager $class to library"
             managers_dict+="'$class': $class,"
-          elif [[ $path == *"strategies"* ]]; then
+          elif [[ $path == *"algorithms"* ]]; then
             echo "adding algorithm $class to library"
             algos_dict+="'$class': $class,"
           elif [[ $path == *"sources"* ]]; then

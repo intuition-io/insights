@@ -14,73 +14,25 @@
 # limitations under the License.
 
 
-import pandas as pd
-
-from zipline.gens.utils import hash_args
-from zipline.sources.data_source import DataSource
-
 import os
 import pytz
 import logbook
+import pandas as pd
+
+from intuition.zipline.data_source import DataFactory
 
 
 log = logbook.Logger('intuition.source.backtest.csv')
 
 
-class CSVSource(DataSource):
+class CSVSource(DataFactory):
     """
-    https://gist.github.com/fawce/4057021
-    Yields all events in event_list that match the given sid_filter.
-    If no event_list is specified, generates an internal stream of events
-    to filter.  Returns all events if filter is None.
-
-    Configuration options:
-
-    sids   : list of values representing simulated internal sids
-    start  : start date
-    delta  : timedelta between internal events
-    filter : filter to remove the sids
+    Loads a dataframe from a given csv file
     """
 
-    def __init__(self, data_descriptor, **kwargs):
-        assert isinstance(data_descriptor['index'], pd.tseries.index.DatetimeIndex)
-
-        self.data_descriptor = data_descriptor
-        # Unpack config dictionary with default values.
-        self.sids  = kwargs.get('sids', data_descriptor['tickers'])
-        self.start = kwargs.get('start', data_descriptor['index'][0])
-        self.end   = kwargs.get('end', data_descriptor['index'][-1])
-        self.index = data_descriptor['index']
-        self.csvname   = self.sids[0] + '.csv'
-
-        # Hash_value for downstream sorting.
-        self.arg_string = hash_args(data_descriptor, **kwargs)
-
-        self._raw_data = None
-
-    @property
-    def mapping(self):
-        #NOTE Round value for less computation overhead ?
-        mapping = {
-            'dt': (lambda x: x, 'dt'),
-            'sid': (lambda x: x, 'sid'),
-            'price': (float, 'Adjusted Close'),
-            'volume': (int, 'Volume'),
-        }
-
-        # Add additional fields.
-        for field_name in self.data:
-            if field_name in ['Adjusted Close', 'Volume', 'dt', 'sid']:
-                continue
-            mapping[field_name] = (lambda x: x, field_name)
-
-        return mapping
-
-    @property
-    def instance_hash(self):
-        return self.arg_string
-
-    def _get(self):
+    def get_data(self):
+        #TODO Iterate over self.sids
+        self.csvname = self.sids[0] + '.csv'
         file_path = '/'.join((os.environ['QTRADE'], 'data', self.csvname))
         assert os.path.exists(file_path)
         df = pd.read_csv(file_path, index_col='Date', parse_dates=True)
@@ -91,20 +43,15 @@ class CSVSource(DataSource):
         df.index = df.index.tz_localize(pytz.utc)
         return df
 
-    def raw_data_gen(self):
-        self.data = self._get()
-        for dt, series in self.data.iterrows():
-            event = {
-                'dt': dt,
-                'sid': self.sids[0]
-            }
-            for field_name, value in series.iteritems():
-                event[field_name] = value
-
-            yield event
-
     @property
-    def raw_data(self):
-        if not self._raw_data:
-            self._raw_data = self.raw_data_gen()
-        return self._raw_data
+    def mapping(self):
+        return {
+            'dt': (lambda x: x, 'dt'),
+            'sid': (lambda x: x, 'sid'),
+            'price': (float, 'Adjusted Close'),
+            'volume': (int, 'Volume'),
+            'open': (float, 'Open'),
+            'high': (float, 'High'),
+            'low': (float, 'Low'),
+            'close': (float, 'Close')
+        }

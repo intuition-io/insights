@@ -15,13 +15,13 @@
 # limitations under the License.
 
 
-from zipline.algorithm import TradingAlgorithm
+from intuition.zipline.algorithm import TradingFactory
 import numpy as np
 from zipline.transforms import batch_transform
 import random
 
 
-class StochasticGradientDescent(TradingAlgorithm):
+class StochasticGradientDescent(TradingFactory):
     '''
     https://www.quantopian.com/posts/second-attempt-at-ml-stochastic-gradient-descent-method-using-hinge-loss-function
     '''

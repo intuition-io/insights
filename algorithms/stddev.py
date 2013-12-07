@@ -14,12 +14,12 @@
 # limitations under the License.
 
 
-from zipline.algorithm import TradingAlgorithm
+from intuition.zipline.algorithm import TradingFactory
 from zipline.transforms import MovingVWAP, MovingStandardDev
 
 
 #TODO The portfolio management is included here, make it a stand alone manager
-class StddevBased(TradingAlgorithm):
+class StddevBased(TradingFactory):
     def initialize(self, properties):
         self.save = properties.get('save', 0)
         self.debug = properties.get('debug', 0)

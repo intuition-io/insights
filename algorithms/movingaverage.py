@@ -18,11 +18,11 @@ import pytz
 import datetime
 import numpy as np
 
-from zipline.algorithm import TradingAlgorithm
+from intuition.zipline.algorithm import TradingFactory
 from zipline.transforms import MovingAverage, MovingVWAP, batch_transform
 
 
-class DualMovingAverage(TradingAlgorithm):
+class DualMovingAverage(TradingFactory):
     """Dual Moving Average Crossover algorithm.
     This algorithm buys apple once its short moving average crosses
     its long moving average (indicating upwards momentum) and sells
@@ -90,7 +90,7 @@ class DualMovingAverage(TradingAlgorithm):
         self.long_mavgs.append(long_mavg)
 
 
-class VolumeWeightAveragePrice(TradingAlgorithm):
+class VolumeWeightAveragePrice(TradingFactory):
     '''https://www.quantopian.com/posts/updated-multi-sid-example-algorithm-1'''
     def initialize(self, properties):
         # Common setup
@@ -169,7 +169,7 @@ class VolumeWeightAveragePrice(TradingAlgorithm):
                 notional = notional + price * order_book[stock]
 
 
-class Momentum(TradingAlgorithm):
+class Momentum(TradingFactory):
     '''
     https://www.quantopian.com/posts/this-is-amazing
     !! Many transactions, so makes the algorithm explode when traded with many positions
@@ -211,7 +211,7 @@ class Momentum(TradingAlgorithm):
                 signals[ticker] = price
             elif sma < price and notional < 0.2 * (capital_used + cash):
                 signals[ticker] = - price
-        
+
         ''' ----------------------------------------------------------   Orders  --'''
         if signals:
             order_book = self.manager.trade_signals_handler(signals)
@@ -222,7 +222,7 @@ class Momentum(TradingAlgorithm):
                         self.datetime, ticker, order_book[ticker]))
 
 
-class MovingAverageCrossover(TradingAlgorithm):
+class MovingAverageCrossover(TradingFactory):
     '''
     https://www.quantopian.com/posts/moving-average-crossover
     '''

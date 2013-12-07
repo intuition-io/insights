@@ -13,101 +13,41 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-Tools to generate data sources.
-"""
-import pandas as pd
 
-from zipline.gens.utils import hash_args
-from zipline.sources.data_source import DataSource
-
-from intuition.data.quandl import DataQuandl
 import logbook
+from intuition.zipline.data_source import DataFactory
+from intuition.data.quandl import DataQuandl
 
 
 log = logbook.Logger('intuition.source.backtest.quandl')
 
 
-class QuandlSource(DataSource):
+class QuandlSource(DataFactory):
     """
-    Yields all events in event_list that match the given sid_filter.
-    If no event_list is specified, generates an internal stream of events
-    to filter.  Returns all events if filter is None.
-
-    Configuration options:
-
-    sids   : list of values representing simulated internal sids
-    start  : start date
-    delta  : timedelta between internal events
-    filter : filter to remove the sids
+    Fetchs data from quandl.com
     """
 
-    def __init__(self, data_descriptor, **kwargs):
-        assert isinstance(data_descriptor['index'],
-                          pd.tseries.index.DatetimeIndex)
-
-        self.data_descriptor = data_descriptor
-        # Unpack config dictionary with default values.
-        self.sids  = kwargs.get('sids', data_descriptor['tickers'])
-        self.start = kwargs.get('start', data_descriptor['index'][0])
-        self.end   = kwargs.get('end', data_descriptor['index'][-1])
-
-        # Hash_value for downstream sorting.
-        self.arg_string = hash_args(data_descriptor, **kwargs)
-
-        self._raw_data = None
+    def get_data(self):
+        #TODO Works here for one value, make it later a panel
 
         # API key must be provided here or store in the environment
         # (QUANDL_API_KEY)
-        self.feed = DataQuandl()
+        feed = DataQuandl()
+        assert len(self.sids) == 1
+
+        return feed.fetch(self.sids[0],
+                          start_date=self.start,
+                          end_date=self.end,
+                          returns='pandas')
 
     @property
     def mapping(self):
-        mapping = {
+        return {
             'dt': (lambda x: x, 'dt'),
             'sid': (lambda x: x, 'sid'),
-            #'price': (float, 'Adjusted Close'),
             'price': (float, 'Close'),
             'volume': (int, 'Volume'),
+            'open': (int, 'Open'),
+            'low': (int, 'Low'),
+            'high': (int, 'High'),
         }
-
-        # Add additional fields.
-        for field_name in self.data:
-            #if field_name in ['Adjusted Close', 'Volume', 'dt', 'sid']:
-            if field_name in ['Close', 'Volume', 'dt', 'sid']:
-                continue
-            mapping[field_name] = (lambda x: x, field_name)
-
-        return mapping
-
-    @property
-    def instance_hash(self):
-        return self.arg_string
-
-    def _get(self):
-        #TODO Works here for one value, make it later a panel
-        assert len(self.sids) == 1
-
-        return self.feed.fetch(self.sids[0],
-                               start_date = self.start,
-                               end_date   = self.end,
-                               returns    = 'pandas')
-
-    def raw_data_gen(self):
-        self.data = self._get()
-        sid = self.sids[0]
-        for dt, series in self.data.iterrows():
-            event = {
-                'dt': dt,
-                'sid': sid,
-            }
-            for field_name, value in series.iteritems():
-                event[field_name] = value
-
-            yield event
-
-    @property
-    def raw_data(self):
-        if not self._raw_data:
-            self._raw_data = self.raw_data_gen()
-        return self._raw_data

@@ -15,120 +15,57 @@
 
 
 import sys
-import time
-import pytz
-import datetime
-import pandas as pd
-
-from zipline.gens.utils import hash_args
-from zipline.sources.data_source import DataSource
-
-from intuition.data.remote import Remote
-
 import logbook
+
+from intuition.zipline.data_source import DataFactory
+from intuition.data.remote import Remote
 
 
 log = logbook.Logger('intuition.sources.live.equities')
 
 
-class EquitiesLiveSource(DataSource):
+class EquitiesLiveSource(DataFactory):
     """
-    Yields all events in event_list that match the given sid_filter.
-    If no event_list is specified, generates an internal stream of events
-    to filter.  Returns all events if filter is None.
-
-    Configuration options:
-
-    sids   : list of values representing simulated internal sids
-    start  : start date
-    delta  : timedelta between internal events
-    filter : filter to remove the sids
+    At each event datetime of the provided index, EquitiesLiveSource fetchs
+    live data from google finance api.
     """
-
-    def __init__(self, data, **kwargs):
-        assert isinstance(data['index'], pd.tseries.index.DatetimeIndex)
-
-        self.data = data
-        # Unpack config dictionary with default values.
-        self.sids  = kwargs.get('sids', data['tickers'])
-        self.start = kwargs.get('start', data['index'][0])
-        self.end   = kwargs.get('end', data['index'][-1])
-
-        # Hash_value for downstream sorting.
-        self.arg_string = hash_args(data, **kwargs)
-
-        self._raw_data = None
-
-        self.remote = Remote()
-
     @property
     def mapping(self):
         return {
             'dt': (lambda x: x, 'dt'),
             'sid': (lambda x: x, 'sid'),
             'price': (float, 'price'),
-            'currency': (str, 'currency'),
-            'perc_change': (float, 'perc_change'),
+            'change': (float, 'perc_change'),
             'volume': (int, 'volume'),
         }
 
-    @property
-    def instance_hash(self):
-        return self.arg_string
-
-    def _wait_for_dt(self, dt):
-        '''
-        Only return when we reach given datetime
-        '''
-        # QuanTrade works with utc dates, conversion
-        # are made for I/O
-        #while datetime.datetime.now(pytz.utc) < dt:
-        now = datetime.datetime.now(pytz.utc)
-        while now < dt:
-            log.debug('Waiting for {} / {}'.format(now, dt))
-            time.sleep(15)
-            now = datetime.datetime.now(pytz.utc)
-
-    def _get_updated_index(self):
-        '''
-        truncate past dates in index
-        '''
-        late_index = self.data['index']
-        current_dt = datetime.datetime.now(pytz.utc)
-        selector = (late_index.day > current_dt.day) \
-                | ((late_index.day == current_dt.day) & (late_index.hour > current_dt.hour)) \
-                | ((late_index.day == current_dt.day) & (late_index.hour == current_dt.hour) & (late_index.minute >= current_dt.minute))
-        return self.data['index'][selector]
+    def get_data(self):
+        snapshot = self.remote.fetch_equities_snapshot(symbols=self.sids,
+                                                       level=1)
+        if snapshot.empty:
+            log.error('** No data available, maybe stopped by google ?')
+            sys.exit(2)
+        return snapshot
 
     def raw_data_gen(self):
+        self.remote = Remote()
         index = self._get_updated_index()
         for dt in index:
             self._wait_for_dt(dt)
-            snapshot = self.remote.fetch_equities_snapshot(symbols=self.sids, level=2)
-            if snapshot.empty:
-                log.error('** No data snapshot available, maybe stopped by google ?')
-                sys.exit(2)
+            snapshot = self.get_data()
+
             for sid in self.sids:
-                # Fix volume = 0, (later will be denominator)
-                if not int(snapshot[sid]['volume']):
-                    #TODO Here just a special value that the algo could detect like a missing data
-                    snapshot[sid]['volume'] = 10001
-                #import ipdb; ipdb.set_trace()
                 #NOTE Conversions here are useless ?
                 if snapshot[sid]['perc_change'] == '':
                     snapshot[sid]['perc_change'] = 0
                 event = {
                     'dt': dt,
                     'sid': sid,
-                    'price': float(snapshot[sid]['last']),
-                    'currency': snapshot[sid]['currency'],
+                    'price': float(snapshot[sid]['last_price'][1:]),
                     'perc_change': float(snapshot[sid]['perc_change']),
-                    'volume': int(snapshot[sid]['volume']),
+                    #FIXME No volume available with level 1 or None
+                    #TODO Here just a special value that the algo could detect
+                    #     like a missing data
+                    'volume': 10001,
                 }
                 yield event
-
-    @property
-    def raw_data(self):
-        if not self._raw_data:
-            self._raw_data = self.raw_data_gen()
-        return self._raw_data

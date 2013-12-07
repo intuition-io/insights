@@ -14,11 +14,11 @@
 # limitations under the License.
 
 
-from zipline.algorithm import TradingAlgorithm
+from intuition.zipline.algorithm import TradingFactory
 
 
 # https://www.quantopian.com/posts/auto-adjusting-stop-loss
-class AutoAdjustingStopLoss(TradingAlgorithm):
+class AutoAdjustingStopLoss(TradingFactory):
     def initialize(self, properties):
         self.save = properties.get('save', 0)
         self.debug = properties.get('debug', 0)

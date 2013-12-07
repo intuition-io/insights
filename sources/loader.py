@@ -17,25 +17,14 @@
 # Benchmark loader modified to allow live data streaming
 
 
-from collections import OrderedDict
 from datetime import datetime
+import pandas as pd
+from collections import OrderedDict
 
-from zipline.data.treasuries import get_treasury_data
-#from zipline.data.benchmarks import get_benchmark_returns
-#from zipline.protocol import DailyReturn
-import collections
-DailyReturn = collections.namedtuple('DailyReturn', ['date', 'returns'])
+import zipline.data.loader as zipline
 
 import intuition.utils.datautils as datautils
 
-from operator import attrgetter
-
-import pytz
-import pandas as pd
-
-
-#TODO A class: the constructor could set from run_backtest the parameters, and
-#only the function will be sent
 
 class LiveBenchmark(object):
     def __init__(self, end, frequency='daily', loopback=4):
@@ -45,53 +34,39 @@ class LiveBenchmark(object):
             self.offset = pd.datetools.Minute()
         elif frequency == 'daily':
             self.offset = pd.datetools.Day()
+            #self.offset = pd.datetools.day
         else:
             raise NotImplementedError()
 
-    def load_market_data(self, bm_symbol='^GSPC'):
+    def normalize_date(self, test_date):
+        ''' Same function as zipline.finance.trading.py'''
+        test_date = pd.Timestamp(test_date, tz='UTC')
+        return pd.tseries.tools.normalize_date(test_date)
+
+    def surcharge_market_data(self, bm_symbol='^GSPC'):
         #TODO Parametric
         #event_dt = datetime.today().replace(tzinfo=pytz.utc)
-        event_dt = datetime.now(pytz.utc)
+        event_dt = self.normalize_date(datetime.now())
 
-        # Getting today benchmark return
-        #NOTE Seems shit but later, previous days could be used to compute indicators
-        #last_bench_return = get_benchmark_returns(bm_symbol, start_date=(event_dt - pd.datetools.Day(self.loopback)))
-        #last_bench_return = last_bench_return[-1]
-        #print('Benchmark on {}: {}'.format(last_bench_return.date, last_bench_return.returns))
-
+        #TODO Handle invalid code
         for exchange, infos in datautils.Exchange.iteritems():
             if infos['index'] == bm_symbol:
                 code = datautils.Exchange[exchange]['code']
                 break
 
-        bm_returns = []
-        while event_dt < self.last_trading_day:
-            #TODO Current value to give
-            #TODO Append only if trading day and market hour
-            #bm_returns.append(DailyReturn(date=event_dt.replace(microsecond=0), returns=last_bench_return.returns))
-            bm_returns.append(DailyReturn(date=event_dt.replace(microsecond=0), returns=code))
-            #TODO Frequency control
-            event_dt += self.offset
+        bm_returns, tr_curves = zipline.load_market_data(bm_symbol)
 
-        bm_returns = sorted(bm_returns, key=attrgetter('date'))
+        dates = pd.date_range(event_dt,
+                              periods=len(bm_returns))
+        #NOTE What is tr_curves['tid'] ?
+        #TODO Replace values to detect the fake later
+        tr_fake = OrderedDict(sorted(
+            ((pd.Timestamp(event_dt + i*self.offset), c)
+             for i, c in enumerate(tr_curves.values())),
+            key=lambda t: t[0]))
 
-        tr_gen = get_treasury_data()
-        while True:
-            try:
-                last_tr = tr_gen.next()
-            except StopIteration:
-                break
+        bm_fake = pd.Series([code] * len(dates), index=dates)
+        for i, dt in enumerate(tr_curves.keys()):
+            pd.Timestamp(event_dt + i * self.offset)
 
-        tr_curves = {}
-        #tr_dt = datetime.today().replace(tzinfo=pytz.utc)
-        tr_dt = datetime.now(pytz.utc)
-        while tr_dt < self.last_trading_day:
-            #tr_dt = tr_dt.replace(hour=0, minute=0, second=0, tzinfo=pytz.utc)
-            tr_curves[tr_dt] = last_tr
-            tr_dt += self.offset
-
-        tr_curves = OrderedDict(sorted(
-                                ((dt, c) for dt, c in tr_curves.iteritems()),
-                                key=lambda t: t[0]))
-
-        return bm_returns, tr_curves
+        return bm_fake, tr_fake

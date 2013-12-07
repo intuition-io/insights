@@ -1,11 +1,16 @@
 Intuition Modules
 =================
 
-Quantitative algorithms, portfolio managers and data sources for Intuition
+Quantitative algorithms, portfolio managers and data sources for Intuition](https://github.com/hackliff/intuition)
 
-Usage
------
 
-```console
-$ git clone https://github.com/hackliff/intuition-modules /path/to/intuition/modules
-```
+Algorithms
+----------
+
+
+Managers
+--------
+
+
+Sources
+-------

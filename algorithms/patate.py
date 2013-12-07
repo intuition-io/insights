@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from zipline.algorithm import TradingAlgorithm
+from intuition.zipline.algorithm import TradingFactory
 import numpy as np
 import copy
 
@@ -15,7 +15,7 @@ def get_input_fields(data, ignored):
     return [field for field in data_fields if field not in unused_fields]
 
 
-class MarkovGenerator(TradingAlgorithm):
+class MarkovGenerator(TradingFactory):
     '''
     Build a probabilist state graph from input data
     from to permit Markov regression
