@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Xavier Bruhiere
+# Copyright 2013 Xavier Bruhiere
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 # limitations under the License.
 
 
-from portfolio import PortfolioManager
+from intuition.zipline.portfolio import PortfolioFactory
 import numpy as np
 import pandas as pd
 
@@ -31,20 +31,19 @@ def compute_weigths(daily_returns):
         one_row = np.matrix(np.ones(len(daily_returns)))
         covariance_matrix_inv = np.linalg.inv(covariance_matrix)
         numerator = np.dot(covariance_matrix_inv, one_vector)
-        denominator = np.dot(np.dot(one_row, covariance_matrix_inv), one_vector)
+        denominator = np.dot(np.dot(one_row, covariance_matrix_inv),
+                             one_vector)
 
         return numerator / denominator
     except:
         return np.zeros(len(daily_returns))
 
 
-class GlobalMinimumVariance(PortfolioManager):
-
+# https://www.quantopian.com/posts/global-minimum-variance-portfolio?c=1
+class GlobalMinimumVariance(PortfolioFactory):
     '''
-    Global minimum Variance Portfolio
-    https://www.quantopian.com/posts/global-minimum-variance-portfolio?c=1
+    Computes from data history a suitable compromise between risks and returns.
     '''
-
     def optimize(self, date, to_buy, to_sell, parameters):
 
         allocations = {}
@@ -57,11 +56,12 @@ class GlobalMinimumVariance(PortfolioManager):
                 returns = parameters['algo']['historical_prices']
             else:
                 #TODO Download it or check in database
-                #NOTE Download allows here only daily data, use google instead ?
+                #NOTE Download allows here daily data, use google instead ?
                 self.log.notice('No returns provided, downloading them')
                 returns_df = self.remote.fetch_equities_daily(
                     to_buy, returns=True, indexes={},
-                    start=date-pd.datetools.Day(parameters.get('loopback', 50)),
+                    start=date - pd.datetools.Day(
+                        parameters.get('loopback', 50)),
                     end=date)
                 returns = returns_df.values
 

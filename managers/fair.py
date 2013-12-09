@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Xavier Bruhiere
+# Copyright 2013 Xavier Bruhiere
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,12 +14,12 @@
 # limitations under the License.
 
 
-from portfolio import PortfolioManager
+from intuition.zipline.portfolio import PortfolioFactory
 
 
-class Fair(PortfolioManager):
+class Fair(PortfolioFactory):
     '''
-    dispatch equals weigths
+    Dispatch equals weigths for buy signals and give up everything on sell ones
     '''
     def optimize(self, date, to_buy, to_sell, parameters):
         allocations = dict()

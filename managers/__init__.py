@@ -8,8 +8,8 @@ from optimalfrontier import OptimalFrontier
 from gmv import GlobalMinimumVariance
 
 __all__ = [
-        'fair',
-        'optimalfrontier',
-        'gmv',
-        'constant'
-        ]
+  'fair',
+  'optimalfrontier',
+  'gmv',
+  'constant'
+]

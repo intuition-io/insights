@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Xavier Bruhiere
+# Copyright 2013 Xavier Bruhiere
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,29 +20,30 @@ import re
 import pandas as pd
 import rpy2.robjects as robjects
 
-from portfolio import PortfolioManager
+from intuition.zipline.portfolio import PortfolioFactory
 
 
-class OptimalFrontier(PortfolioManager):
+class OptimalFrontier(PortfolioFactory):
     '''
-    Compute with R the efficient frontier and pick up the optimize point on it
+    Computes with R the efficient frontier and pick up the optimize point on it
     '''
     def __init__(self, parameters):
-        PortfolioManager.__init__(self, parameters)
+        PortfolioFactory.__init__(self, parameters)
 
         # R stuff: R functions file and rpy interface
         self.r = robjects.r
-        #FIXME in remote: portfolio_opt_file = '/'.join((os.environ['QTRADE'],
-        portfolio_opt_file = '/'.join((os.path.expanduser('~/dev/projects/ppQuanTrade'),
-            'neuronquant/algorithmic/managers/opt_utils.R'))
+        portfolio_opt_file = '/'.join((
+            os.environ['QTRADE'], 'intuition/modules/managers/opt_utils.R'))
         self.r('source("{}")'.format(portfolio_opt_file))
 
     def optimize(self, date, to_buy, to_sell, parameters):
         allocations = dict()
 
-        # Considere only portfolio positions + future positions - positions about to be sold
+        # Considers only portfolio positions + future positions - positions
+        # about to be sold
         positions = set([t for t in self.portfolio.positions.keys()
-                         if self.portfolio.positions[t].amount]).union(to_buy).difference(to_sell)
+                         if self.portfolio.positions[t].amount]
+                        ).union(to_buy).difference(to_sell)
         if not positions and to_sell:
             for t in to_sell:
                 allocations[t] = - parameters.get('perc_sell', 1.0)
@@ -57,21 +58,23 @@ class OptimalFrontier(PortfolioManager):
         if 'historical_prices' in parameters['algo']:
             #TODO The converion needs dates, should get the complete dataframe
             raise NotImplementedError()
-            returns = pd.rpy.common.convert_to_r_matrix(pd.DataFrame(parameters['algo']['historical_prices']))
+            returns = pd.rpy.common.convert_to_r_matrix(
+                pd.DataFrame(parameters['algo']['historical_prices']))
         else:
             returns = self.remote.fetch_equities_daily(
                 positions, r_type=True, returns=True, indexes={},
                 start=date-pd.datetools.Day(parameters.get('loopback', 50)),
                 end=date)
 
-        frontier = self.r('getEfficientFrontier')(returns,
-            points=500, Debug=False, graph=False)
+        frontier = self.r('getEfficientFrontier')(
+            returns, points=500, Debug=False, graph=False)
         if not frontier:
             self.log.warning('No optimal frontier found')
             return dict(), None, None
 
         try:
-            mp = self.r('marketPortfolio')(frontier, 0.02, Debug=False, graph=False)
+            mp = self.r('marketPortfolio')(
+                frontier, 0.02, Debug=False, graph=False)
         except:
             self.log.error('** Error running R optimizer')
             return dict(), None, None
@@ -81,23 +84,31 @@ class OptimalFrontier(PortfolioManager):
         for p in positions:
             #NOTE R change a bit names
             try:
-                allocations[p] = round(mp.rx(re.sub("[-,!\ ]", ".", p))[0][0], 2)
+                allocations[p] = round(
+                    mp.rx(re.sub("[-,!\ ]", ".", p))[0][0], 2)
             except:
                 allocations[p] = 0.00
 
-        er   = round(mp.rx('er')[0][0], 2)
+        er = round(mp.rx('er')[0][0], 2)
         eStd = round(mp.rx('eStd')[0][0], 2)
-        self.log.info('Allocation: {} With expected return: {} and expected risk: {}'.format(allocations, er, eStd))
+        self.log.info(
+            'Allocation: {} With expected return: {} and expected risk: {}'
+            .format(allocations, er, eStd))
 
         return allocations, er, eStd
 
 
 ''' Zipline notes:
-self.portfolio.cash + self.portfolio.positions_value = self.portfolio.portfolio_value
-self.portfolio.capital_used = self.portfolio.starting_cash - self.portfolio.cash
+self.portfolio.portfolio_value =
+    self.portfolio.cash + self.portfolio.positions_value
+self.portfolio.capital_used =
+    self.portfolio.starting_cash - self.portfolio.cash
 
 ipdb> self.portfolio.positions
-{'Air Products and ': Position({'amount': 100, 'last_sale_price': 47.5, 'cost_basis': 47.5775, 'sid': 'Air Products and '})}
+{'Air Products and ': Position(
+{'amount': 100, 'last_sale_price': 47.5,
+'cost_basis': 47.5775, 'sid': 'Air Products and '}
+)}
 
 The manager could monitor many stuff: winning trades, positions, frequency...
 '''

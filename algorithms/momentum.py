@@ -1,0 +1,73 @@
+#
+# Copyright 2012 Xavier Bruhiere
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+from intuition.zipline.algorithm import TradingFactory
+from zipline.transforms import MovingAverage
+
+
+# https://www.quantopian.com/posts/this-is-amazing
+class Momentum(TradingFactory):
+    '''
+    '''
+    #FIXME Many transactions, so makes the algorithm explode when traded with
+    #      many positions
+    def initialize(self, properties):
+        self.save = properties.get('save', 0)
+        self.debug = properties.get('debug', 0)
+
+        self.max_notional = 100000.1
+        self.min_notional = -100000.0
+
+        self.add_transform(MovingAverage, 'mavg', ['price'],
+                           window_length=properties.get('window_length', 3))
+
+    def handle_data(self, data):
+        ''' ---------------------------------------------------    Init   --'''
+        if self.initialized:
+            self.manager.update(
+                self.portfolio,
+                self.datetime.to_pydatetime(),
+                self.perf_tracker.cumulative_risk_metrics.to_dict(),
+                save=self.save,
+                widgets=False)
+        else:
+            self.initialized = True
+        signals = dict()
+        notional = 0
+
+        ''' ---------------------------------------------------    Scan   --'''
+        for ticker in data:
+            sma = data[ticker].mavg.price
+            price = data[ticker].price
+            cash = self.portfolio.cash
+            notional = self.portfolio.positions[ticker].amount * price
+            capital_used = self.portfolio.capital_used
+
+            # notional stuff are portfolio strategies, implement a new one,
+            # combinaison => parameters !
+            if sma > price and notional > -0.2 * (capital_used + cash):
+                signals[ticker] = price
+            elif sma < price and notional < 0.2 * (capital_used + cash):
+                signals[ticker] = - price
+
+        ''' --------------------------------------------------   Orders  --'''
+        if signals:
+            order_book = self.manager.trade_signals_handler(signals)
+            for ticker in order_book:
+                self.order(ticker, order_book[ticker])
+                if self.debug:
+                    self.logger.notice('{}: Ordering {} {} stocks'.format(
+                        self.datetime, ticker, order_book[ticker]))

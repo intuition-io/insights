@@ -24,7 +24,7 @@ class MySource(DataFactory):
 
   def get_data(self):
     '''
-    Returns a pandas dataframe or panel used as trading events.
+    Returns a pandas.DataFrame or pandas.Panel used as trading events.
     DataFactory can process the following schemes
 
           | goog | aapl              | open | high | volume

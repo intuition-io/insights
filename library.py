@@ -26,12 +26,16 @@ import logbook
 log = logbook.Logger('intuition.library')
 
 
-from intuition.modules.strategies.followers import BuyAndHold,FollowTrend,RegularRebalance
-from intuition.modules.strategies.machinelearning import StochasticGradientDescent
-from intuition.modules.strategies.movingaverage import DualMovingAverage,VolumeWeightAveragePrice,Momentum,MovingAverageCrossover
-from intuition.modules.strategies.orderbased import AutoAdjustingStopLoss
-from intuition.modules.strategies.patate import MarkovGenerator
-from intuition.modules.strategies.stddev import StddevBased
+from intuition.modules.algorithms.buyandhold import BuyAndHold
+from intuition.modules.algorithms.followtrend import FollowTrend
+from intuition.modules.algorithms.gradient import StochasticGradientDescent
+from intuition.modules.algorithms.macrossover import MovingAverageCrossover
+from intuition.modules.algorithms.momentum import Momentum
+from intuition.modules.algorithms.movingaverage import DualMovingAverage
+from intuition.modules.algorithms.rebalance import RegularRebalance
+from intuition.modules.algorithms.stddev import StddevBased
+from intuition.modules.algorithms.stoploss import AutoAdjustingStopLoss
+from intuition.modules.algorithms.vwap import VolumeWeightAveragePrice
 from intuition.modules.managers.constant import Constant
 from intuition.modules.managers.fair import Fair
 from intuition.modules.managers.gmv import GlobalMinimumVariance
@@ -43,7 +47,7 @@ from intuition.modules.sources.live.equities import EquitiesLiveSource
 from intuition.modules.sources.live.forex import ForexLiveSource
 
 
-algorithms = {'BuyAndHold': BuyAndHold,'FollowTrend': FollowTrend,'RegularRebalance': RegularRebalance,'StochasticGradientDescent': StochasticGradientDescent,'DualMovingAverage': DualMovingAverage,'VolumeWeightAveragePrice': VolumeWeightAveragePrice,'Momentum': Momentum,'MovingAverageCrossover': MovingAverageCrossover,'AutoAdjustingStopLoss': AutoAdjustingStopLoss,'MarkovGenerator': MarkovGenerator,'StddevBased': StddevBased,}
+algorithms = {'BuyAndHold': BuyAndHold,'FollowTrend': FollowTrend,'StochasticGradientDescent': StochasticGradientDescent,'MovingAverageCrossover': MovingAverageCrossover,'Momentum': Momentum,'DualMovingAverage': DualMovingAverage,'RegularRebalance': RegularRebalance,'StddevBased': StddevBased,'AutoAdjustingStopLoss': AutoAdjustingStopLoss,'VolumeWeightAveragePrice': VolumeWeightAveragePrice,}
 
 portfolio_managers = {'Constant': Constant,'Fair': Fair,'GlobalMinimumVariance': GlobalMinimumVariance,'OptimalFrontier': OptimalFrontier,}
 

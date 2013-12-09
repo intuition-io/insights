@@ -31,7 +31,7 @@ for path in ${contrib_index[@]}; do
 
         class_names=$(cat $file | grep "^class" | \
           awk -F " " '{print $2}' | \
-          awk -F "(" '{if (($2 == "TradingAlgorithm):")  || ($2 == "QuantitativeTrading):") || ($2 == "PortfolioManager):") || ($2 == "DataSource):")) print $1}')
+          awk -F "(" '{if (($2 == "TradingAlgorithm):")  || ($2 == "TradingFactory):") || ($2 == "PortfolioFactory):") || ($2 == "DataFactory):")) print $1}')
 
         if [[ $class_names == "" ]]; then
           continue
