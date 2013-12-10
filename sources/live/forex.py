@@ -18,14 +18,14 @@ import time
 import logbook
 import pandas as pd
 
-from intuition.zipline.data_source import DataFactory
+from intuition.zipline.data_source import LiveDataFactory
 from intuition.data.forex import ConnectTrueFX
 
 
 log = logbook.Logger('intuition.sources.live.forex')
 
 
-class ForexLiveSource(DataFactory):
+class ForexLiveSource(LiveDataFactory):
     """
     At each event datetime of the provided index, ForexLiveSource fetchs live
     forex data from TrueFX.
@@ -33,6 +33,9 @@ class ForexLiveSource(DataFactory):
     EUR/USD  USD/JPY  GBP/USD  EUR/GBP  USD/CHF  EUR/JPY  EUR/CHF  USD/CAD
     AUD/USD  GBP/JPY  AUD/JPY  AUD/NZD  CAD/JPY  CHF/JPY  NZD/USD
     """
+    def initialize(self, data_descriptor, **kwags):
+        self.forex = ConnectTrueFX(pairs=self.sids)
+
     @property
     def mapping(self):
         return {
@@ -40,12 +43,12 @@ class ForexLiveSource(DataFactory):
             #TODO Here conversion (weird result for now)
             # Or: (lambda x: pd.tslib.i8_to_pydt(x + '000000'), 'trade_time'),
             'trade_time': (lambda x: pd.datetime.utcfromtimestamp(
-                float(x[:-3])), 'trade_time'),
+                float(x[:-3])), 'TimeStamp'),
             'sid': (lambda x: x, 'sid'),
-            'price': (float, 'bid'),
-            'ask': (float, 'ask'),
-            'high': (float, 'high'),
-            'low': (float, 'low'),
+            'price': (float, 'Bid.Price'),
+            'ask': (float, 'Ask.Price'),
+            'high': (float, 'High'),
+            'low': (float, 'Low'),
             'volume': (int, 'volume')
         }
 
@@ -58,29 +61,9 @@ class ForexLiveSource(DataFactory):
                 break
             log.debug('Waiting for Forex update')
             time.sleep(30)
-        return rates
-
-    def raw_data_gen(self):
-        self.forex = ConnectTrueFX(pairs=self.sids)
-        index = self._get_updated_index()
-        import ipdb; ipdb.set_trace()
-        for dt in index:
-            self._wait_for_dt(dt)
-            rates = self.get_data()
-
-            for sid in self.sids:
-                assert sid in rates.columns
-                event = self.build_event(dt, sid, rates)
-                '''
-                event = {
-                    'dt': dt,
-                    'sid': sid,
-                    'trade_time': rates[sid]['TimeStamp'],
-                    'bid': rates[sid]['Bid.Price'],
-                    'ask': rates[sid]['Ask.Price'],
-                    'high': rates[sid]['High'],
-                    'low': rates[sid]['Low'],
-                    'volume': 10000
-                }
-                '''
-                yield event
+        #import ipdb; ipdb.set_trace()
+        #FIXME We need volume field to be consistent with the API
+        row = {}
+        for sid in rates.columns:
+            row[sid] = {'volume': 1000}
+        return rates.append(pd.DataFrame(row))

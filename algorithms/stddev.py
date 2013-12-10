@@ -51,6 +51,11 @@ class StddevBased(TradingFactory):
         self.add_transform(MovingVWAP, 'vwap', window_length=properties.get('vwap_window', 5))
 
     def handle_data(self, data):
+
+        if self.debug:
+            print('\n' + 79 * '=')
+            print self.portfolio
+            print(79 * '=' + '\n')
         ''' ----------------------------------------------------------    Init   --'''
         if self.initialized:
             user_instruction = self.manager.update(

@@ -16,19 +16,22 @@
 
 import sys
 import logbook
+import pandas as pd
 
-from intuition.zipline.data_source import DataFactory
+from intuition.zipline.data_source import LiveDataFactory
 from intuition.data.remote import Remote
 
 
 log = logbook.Logger('intuition.sources.live.equities')
 
 
-class EquitiesLiveSource(DataFactory):
+class EquitiesLiveSource(LiveDataFactory):
     """
     At each event datetime of the provided index, EquitiesLiveSource fetchs
     live data from google finance api.
     """
+    remote = Remote()
+
     @property
     def mapping(self):
         return {
@@ -45,27 +48,8 @@ class EquitiesLiveSource(DataFactory):
         if snapshot.empty:
             log.error('** No data available, maybe stopped by google ?')
             sys.exit(2)
-        return snapshot
-
-    def raw_data_gen(self):
-        self.remote = Remote()
-        index = self._get_updated_index()
-        for dt in index:
-            self._wait_for_dt(dt)
-            snapshot = self.get_data()
-
-            for sid in self.sids:
-                #NOTE Conversions here are useless ?
-                if snapshot[sid]['perc_change'] == '':
-                    snapshot[sid]['perc_change'] = 0
-                event = {
-                    'dt': dt,
-                    'sid': sid,
-                    'price': float(snapshot[sid]['last_price'][1:]),
-                    'perc_change': float(snapshot[sid]['perc_change']),
-                    #FIXME No volume available with level 1 or None
-                    #TODO Here just a special value that the algo could detect
-                    #     like a missing data
-                    'volume': 10001,
-                }
-                yield event
+        #FIXME We need volume field to be consistent with the API
+        row = {}
+        for sid in snapshot.columns:
+            row[sid] = {'volume': 1000}
+        return snapshot.append(pd.DataFrame(row))

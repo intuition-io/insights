@@ -27,6 +27,11 @@ class AutoAdjustingStopLoss(TradingFactory):
         self.scale = {}
 
     def handle_data(self, data):
+
+        if self.debug:
+            print('\n' + 79 * '=')
+            print self.portfolio
+            print(79 * '=' + '\n')
         ''' ----------------------------------------------------------    Init   --'''
         if self.initialized:
             user_instruction = self.manager.update(

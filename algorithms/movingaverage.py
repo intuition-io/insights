@@ -47,6 +47,11 @@ class DualMovingAverage(TradingFactory):
         self.long_mavgs = []
 
     def handle_data(self, data):
+        if self.debug:
+            print('\n' + 79 * '=')
+            print self.portfolio
+            print(79 * '=' + '\n')
+
         ''' ---------------------------------------------------    Init   --'''
         if self.initialized:
             self.manager.update(

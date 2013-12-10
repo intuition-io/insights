@@ -23,7 +23,7 @@ from collections import OrderedDict
 
 import zipline.data.loader as zipline
 
-import intuition.utils.datautils as datautils
+import intuition.data.utils as datautils
 
 
 class LiveBenchmark(object):

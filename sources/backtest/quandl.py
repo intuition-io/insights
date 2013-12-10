@@ -23,9 +23,9 @@ log = logbook.Logger('intuition.source.backtest.quandl')
 
 
 class QuandlSource(DataFactory):
-    """
+    '''
     Fetchs data from quandl.com
-    """
+    '''
 
     def get_data(self):
         #TODO Works here for one value, make it later a panel
@@ -33,12 +33,13 @@ class QuandlSource(DataFactory):
         # API key must be provided here or store in the environment
         # (QUANDL_API_KEY)
         feed = DataQuandl()
-        assert len(self.sids) == 1
+        #assert len(self.sids) == 1
 
-        return feed.fetch(self.sids[0],
+        data = feed.fetch(self.sids,
                           start_date=self.start,
                           end_date=self.end,
                           returns='pandas')
+        return data
 
     @property
     def mapping(self):

@@ -17,7 +17,7 @@
 # limitations under the License.
 
 
-'''QuanTrade.
+'''generator.
 
 Usage:
   generate_algo_env.py --author=<name> --strategy=<name> [--manager=<name>] [--year=<xxxx>]

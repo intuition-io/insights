@@ -47,6 +47,11 @@ class StochasticGradientDescent(TradingFactory):
 
     def handle_data(self, data):
         self.loops += 1
+
+        if self.debug:
+            print('\n' + 79 * '=')
+            print self.portfolio
+            print(79 * '=' + '\n')
         ''' ---------------------------------------------------    Init   --'''
         if self.initialized:
             self.manager.update(

@@ -16,7 +16,9 @@ class MySource(DataFactory):
   providing dates and the trading universe (i.e. tickers, market, random, ...)
 
   The class provides the following attributes :
-    - self.sids - list of strings describing the trading universe
+    - self.sids - list of strings representing simulated internal sids
+                  It can be an explicit list of symbols, or a universe like nyse,20
+                  (that will pick up 20 random symbols from nyse exchange)
     - self.index - pandas.tseries.index.DatetimeIndex
     - self.start - self.index[0]
     - self.end - self.index[-1]

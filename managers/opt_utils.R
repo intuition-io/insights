@@ -68,25 +68,25 @@ downloadOneSerie = function (symbol, from, to) {
     adjClose    = paste(symbol, ".Adj.Close", sep = "")
     inputReturn = paste(symbol, ".Return", sep    = "")
     CReturn     = paste(symbol, ".CReturn", sep   = "")
-    
+
     # Calculate the Returns and put it on the time series
     #input.Return = returns(input[, adjClose])
     input.Return = ROC(input[, adjClose])
     colnames(input.Return)[1] = inputReturn
     input = merge(input,input.Return)
-    
+
     #Calculate the cumulative return and put it on the time series
     flog.info('Computing cumulative returns')
     input.first   = input[, adjClose][1]
     input.CReturn = fapply(input[,adjClose],FUN = function(x) log(x) - log(input.first))
     colnames(input.CReturn)[1] = CReturn
     input = merge(input,input.CReturn)
-    
+
     #Deleting things (not sure I need to do this, but I can't not delete things if
     # given a way to...
     flog.debug('Cleaning temporary columns')
     rm(input.first,input.Return,input.CReturn,adjClose,inputReturn,CReturn)
-    
+
     #Return the timeseries
     return(input)
 }
@@ -100,13 +100,13 @@ serieFromDB <- function(symbol,
 
     flog.info('Fetching serie from database')
     flog.info('Reading MySQL configuration')
-    config <- fromJSON(file(paste('~/.quantrade', dbfile, sep='/'), 'r'))$mysql
+    config <- fromJSON(file(paste('~/.intuition', dbfile, sep='/'), 'r'))$mysql
 
     flog.debug('Connecting to MySQL')
     stocksDB = dbConnect(MySQL(),
-                         user=config['user'][[1]], 
-                         password=config['password'][[1]], 
-                         dbname=config['database'][[1]], 
+                         user=config['user'][[1]],
+                         password=config['password'][[1]],
+                         dbname=config['database'][[1]],
                          host=config['hostname'][[1]])
     on.exit(dbDisconnect(stocksDB))
 

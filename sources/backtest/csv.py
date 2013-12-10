@@ -27,21 +27,32 @@ log = logbook.Logger('intuition.source.backtest.csv')
 
 class CSVSource(DataFactory):
     """
-    Loads a dataframe from a given csv file
+    Loads a dataframe or a panel from given csv file(s)
+    Currently csv files must be located in $QTRADE/data
     """
 
     def get_data(self):
         #TODO Iterate over self.sids
-        self.csvname = self.sids[0] + '.csv'
-        file_path = '/'.join((os.environ['QTRADE'], 'data', self.csvname))
-        assert os.path.exists(file_path)
-        df = pd.read_csv(file_path, index_col='Date', parse_dates=True)
-        # Make sure of chronological order
-        df = df.sort_index()
-        df = df[df.index >= self.start]
-        df = df[df.index <= self.end]
-        df.index = df.index.tz_localize(pytz.utc)
-        return df
+        tmp_data = {}
+        for sid in self.sids:
+            if sid.rfind('csv') == -1:
+                sid += '.csv'
+            file_path = '/'.join((os.environ['QTRADE'], 'data', sid))
+            assert os.path.exists(file_path)
+
+            df = pd.read_csv(file_path, index_col='Date', parse_dates=True)
+            # Make sure of chronological order
+            df = df.sort_index()
+            df = df[df.index >= self.start]
+            df = df[df.index <= self.end]
+            df.index = df.index.tz_localize(pytz.utc)
+            tmp_data[sid] = df
+
+        if len(self.sids) == 1:
+            data = tmp_data[sid]
+        else:
+            data = pd.Panel(tmp_data)
+        return data
 
     @property
     def mapping(self):
