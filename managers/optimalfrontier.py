@@ -55,11 +55,11 @@ class OptimalFrontier(PortfolioFactory):
         if len(positions) == 1:
             return {positions.pop(): parameters.get('max_weigths', 0.2)}, 0, 1
 
-        if 'historical_prices' in parameters['algo']:
+        if 'historical_prices' in parameters:
             #TODO The converion needs dates, should get the complete dataframe
             raise NotImplementedError()
             returns = pd.rpy.common.convert_to_r_matrix(
-                pd.DataFrame(parameters['algo']['historical_prices']))
+                pd.DataFrame(parameters['historical_prices']))
         else:
             returns = self.remote.fetch_equities_daily(
                 positions, r_type=True, returns=True, indexes={},

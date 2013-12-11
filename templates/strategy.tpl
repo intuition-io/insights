@@ -22,31 +22,14 @@ class {{ strategy }}(TradingAlgorithm):
     def initialize(self, properties):
         self.debug = properties.get('debug', False)
         self.save = properties.get('save', False)
-        self.loops = 0
 
-    def handle_data(self, data):
-        self.loops += 1
+    def event(self, data):
+        ''' -------------------------------------------------    Init   --'''
         signals = {}
-        ''' ------------------------------------------------------    Init   --'''
-        if self.initialized:
-            instructions = self.manager.update(
-                    self.portfolio,
-                    self.datetime.to_pydatetime(),
-                    self.perf_tracker.cumulative_risk_metrics.to_dict(),
-                    save=self.save,
-                    widgets=False)
-        else:
-            # Perf_tracker need at least a turn to have an index
-            self.initialized = True
 
         ''' --------------------------------------------------    Scan   --'''
         for ticker in data:
             self.logger.debug(data[ticker].price)
 
-        ''' ------------------------------------------------------   Orders  --'''
-        if signals:
-            orderBook = self.manager.trade_signals_handler(signals)
-            for stock in orderBook:
-                if self.debug:
-                    self.logger.notice('{}: Ordering {} {} stocks'.format(
-                        self.datetime, stock, orderBook[stock]))
+        ''' --------------------------------------------------   Orders  --'''
+        return signals

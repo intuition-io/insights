@@ -26,17 +26,18 @@ class Constant(PortfolioFactory):
 
     def optimize(self, date, to_buy, to_sell, parameters):
         '''
-        Buy sid * parameters['buy_amount'] * parameters['algo']['scale'][sid]
-        Sell sid * parameters['sell_amount'] * parameters['algo']['scale'][sid]
+        Buy sid * parameters['buy_amount'] * parameters['scale'][sid]
+        Sell sid * parameters['sell_amount'] * parameters['scale'][sid]
         '''
-        is_scaled = True if 'scale' in parameters['algo'] else False
+        is_scaled = True if 'scale' in parameters else False
         allocations = {}
 
         # Process every stock the same way
         for s in to_buy:
             quantity = parameters.get('buy_amount', 100)
             if is_scaled:
-                quantity *= parameters['algo']['scale'][s]
+                if s in parameters['scale']:
+                    quantity *= parameters['scale'][s]
             # Allocate defined amount to buy
             allocations[s] = quantity
 
@@ -44,7 +45,8 @@ class Constant(PortfolioFactory):
             quantity = parameters.get(
                 'sell_amount', self.portfolio.positions[s].amount)
             if is_scaled:
-                quantity *= parameters['algo']['scale'][s]
+                if s in parameters['scale']:
+                    quantity *= parameters['scale'][s]
             # Allocate defined amount to buy
             allocations[s] = - quantity
 

@@ -41,35 +41,13 @@ class RegularRebalance(TradingFactory):
             window_length=properties.get('window_length', 40),
             compute_only_full=False)
 
-        #Set day
-        self.day = 0
-
         # Set Max and Min positions in security
         self.max_notional = 1000000.1
         self.min_notional = -1000000.0
         #Set commission
         #self.set_commission(commission.PerTrade(cost=7.95))
 
-    def handle_data(self, data):
-
-        self.day += 1
-
-        if self.debug:
-            print('\n' + 79 * '=')
-            print self.portfolio
-            print(79 * '=' + '\n')
-
-        if self.initialized:
-            self.manager.update(
-                self.portfolio,
-                self.datetime,
-                self.perf_tracker.cumulative_risk_metrics.to_dict(),
-                save=self.save,
-                widgets=False)
-        else:
-            # Perf_tracker need at least a turn to have an index
-            self.initialized = True
-
+    def event(self, data):
         signals = {}
 
         #get 20 days of prices for each security
@@ -86,20 +64,9 @@ class RegularRebalance(TradingFactory):
         for i, sid in enumerate(data):
             signals[sid] = data[sid].price
 
-        self.process_signals(signals, historical_prices=daily_returns)
-
-    def process_signals(self, signals, **kwargs):
-        if not signals:
-            return
-
-        order_book = self.manager.trade_signals_handler(
-            signals, kwargs)
-
-        for sid in order_book:
-            if self.debug:
-                self.logger.notice('{} Ordering {} {} stocks'
-                    .format(self.datetime, sid, order_book[sid]))
-            self.order(sid, order_book[sid])
+        self.manager.advise(historical_prices=daily_returns)
+        #self.process_signals(signals, historical_prices=daily_returns)
+        return signals
 
 
 @batch_transform

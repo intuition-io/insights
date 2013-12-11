@@ -34,18 +34,8 @@ class Momentum(TradingFactory):
         self.add_transform(MovingAverage, 'mavg', ['price'],
                            window_length=properties.get('window_length', 3))
 
-    def handle_data(self, data):
-        ''' ---------------------------------------------------    Init   --'''
-        if self.initialized:
-            self.manager.update(
-                self.portfolio,
-                self.datetime.to_pydatetime(),
-                self.perf_tracker.cumulative_risk_metrics.to_dict(),
-                save=self.save,
-                widgets=False)
-        else:
-            self.initialized = True
-        signals = dict()
+    def event(self, data):
+        signals = {}
         notional = 0
 
         ''' ---------------------------------------------------    Scan   --'''
@@ -63,11 +53,4 @@ class Momentum(TradingFactory):
             elif sma < price and notional < 0.2 * (capital_used + cash):
                 signals[ticker] = - price
 
-        ''' --------------------------------------------------   Orders  --'''
-        if signals:
-            order_book = self.manager.trade_signals_handler(signals)
-            for ticker in order_book:
-                self.order(ticker, order_book[ticker])
-                if self.debug:
-                    self.logger.notice('{}: Ordering {} {} stocks'.format(
-                        self.datetime, ticker, order_book[ticker]))
+        return signals

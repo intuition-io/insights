@@ -15,10 +15,12 @@
 # limitations under the License.
 
 
-from intuition.zipline.algorithm import TradingFactory
-import numpy as np
-from zipline.transforms import batch_transform
 import random
+import numpy as np
+
+from zipline.transforms import batch_transform
+
+from intuition.zipline.algorithm import TradingFactory
 
 
 # https://www.quantopian.com/posts/\
@@ -33,10 +35,6 @@ class StochasticGradientDescent(TradingFactory):
 
         self.rebalance_period = properties.get('rebalance_period', 5)
 
-        self.loops = 0
-
-        #FIXME Should be set
-        self.capital_base = properties.get('capital_base', 10000.0)
         self.bet_amount = self.capital_base
         self.max_notional = self.capital_base + 0.1
         self.min_notional = -self.capital_base
@@ -45,25 +43,8 @@ class StochasticGradientDescent(TradingFactory):
             refresh_period=properties.get('refresh_period', 1),
             window_length=properties.get('window_length', 60))
 
-    def handle_data(self, data):
-        self.loops += 1
-
-        if self.debug:
-            print('\n' + 79 * '=')
-            print self.portfolio
-            print(79 * '=' + '\n')
+    def event(self, data):
         ''' ---------------------------------------------------    Init   --'''
-        if self.initialized:
-            self.manager.update(
-                self.portfolio,
-                self.datetime.to_pydatetime(),
-                self.perf_tracker.cumulative_risk_metrics.to_dict(),
-                save=self.save,
-                widgets=False)
-        else:
-            # Perf_tracker need at least a turn to have an index
-            self.initialized = True
-
         signals = {}
 
         for stock in data:
@@ -86,7 +67,7 @@ class StochasticGradientDescent(TradingFactory):
             notional = self.portfolio.positions[stock].amount * current_Prices
 
             if indicator >= 0 and notional < self.max_notional \
-                    and self.loops % self.rebalance_period == 0:
+                    and self.day % self.rebalance_period == 0:
                 #TODO indicator should be used to pondrate
                 #     However it is much too small
                 signals[stock] = current_Prices
@@ -95,27 +76,13 @@ class StochasticGradientDescent(TradingFactory):
                 #(self.datetime, self.capital_base * indicator * 10000, stock))
 
             if indicator < 0 and notional > self.min_notional \
-                    and self.loops % self.rebalance_period == 0:
+                    and self.day % self.rebalance_period == 0:
                 signals[stock] = - current_Prices
                 #self.order(stock, indicator * self.capital_base * 10000)
                 #self.logger.notice("[%s] %f shares of %s sold." % \
                 #(self.datetime, self.capital_base * indicator * 10000, stock))
 
-        self.process_signals(signals)
-
-    def process_signals(self, signals, **kwargs):
-        if not signals:
-            return
-
-        order_book = self.manager.trade_signals_handler(
-            signals, kwargs)
-
-        for sid in order_book:
-            if self.debug:
-                self.logger.notice(
-                    '{} Ordering {} {} stocks'
-                    .format(self.datetime, sid, order_book[sid]))
-            self.order(sid, order_book[sid])
+        return signals
 
 
 @batch_transform

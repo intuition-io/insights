@@ -46,24 +46,11 @@ class DualMovingAverage(TradingFactory):
         self.short_mavgs = []
         self.long_mavgs = []
 
-    def handle_data(self, data):
-        if self.debug:
-            print('\n' + 79 * '=')
-            print self.portfolio
-            print(79 * '=' + '\n')
+    def preamble(self, data):
+        for t in data:
+            self.invested[t] = False
 
-        ''' ---------------------------------------------------    Init   --'''
-        if self.initialized:
-            self.manager.update(
-                self.portfolio,
-                self.datetime.to_pydatetime(),
-                self.perf_tracker.cumulative_risk_metrics.to_dict(),
-                save=self.save,
-                widgets=False)
-            for t in data:
-                self.invested[t] = False
-        else:
-            self.initialized = True
+    def event(self, data):
         signals = {}
 
         ''' ---------------------------------------------------    Scan   --'''
@@ -79,15 +66,4 @@ class DualMovingAverage(TradingFactory):
                 signals[ticker] = - data[ticker].price
                 self.invested[ticker] = False
 
-        ''' ---------------------------------------------------   Orders  --'''
-        if signals:
-            orderBook = self.manager.trade_signals_handler(signals)
-            for ticker in orderBook:
-                if self.debug:
-                    self.logger.notice('{} Ordering {} {} stocks'
-                        .format(self.datetime, ticker, orderBook[ticker]))
-                self.order(ticker, orderBook[ticker])
-
-        # Save mavgs for later analysis.
-        self.short_mavgs.append(short_mavg)
-        self.long_mavgs.append(long_mavg)
+        return signals

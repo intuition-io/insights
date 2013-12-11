@@ -30,8 +30,12 @@ class VolumeWeightAveragePrice(TradingFactory):
         self.save = properties.get('save', 0)
         self.debug = properties.get('debug', 0)
 
-        self.buy_trigger = properties.get('buy_trigger', 0.995)
-        self.sell_trigger = properties.get('sell_trigger', 1.005)
+        #self.buy_trigger = properties.get('buy_trigger', 0.995)
+        #self.sell_trigger = properties.get('sell_trigger', 1.005)
+        self.buy_trigger = 1 + (
+            float(properties.get('buy_trigger', -5)) / 100)
+        self.sell_trigger = 1 + (
+            float(properties.get('sell_trigger', 5)) / 100)
 
         # Here we initialize each stock.  Note that we're not storing integers;
         # by calling sid(123) we're storing the Security object.
@@ -48,29 +52,11 @@ class VolumeWeightAveragePrice(TradingFactory):
         self.add_transform(MovingVWAP, 'vwap', market_aware=True,
                            window_length=properties.get('window_length', 3))
 
-    def handle_data(self, data):
-
-        if self.debug:
-            print('\n' + 79 * '=')
-            print self.portfolio
-            print(79 * '=' + '\n')
-        ''' ---------------------------------------------------    Init   --'''
-        if self.initialized:
-            self.manager.update(
-                self.portfolio,
-                self.datetime.to_pydatetime(),
-                self.perf_tracker.cumulative_risk_metrics.to_dict(),
-                save=self.save,
-                widgets=False)
-        else:
-            self.initialized = True
-
+    def event(self, data):
         signals = {}
-
         # Initializing the position as zero at the start of each frame
         notional = 0
 
-        ''' ---------------------------------------------------    Scan   --'''
         # This runs through each stock.  It computes
         # our position at the start of each frame.
         for stock in data:
@@ -92,7 +78,7 @@ class VolumeWeightAveragePrice(TradingFactory):
                 signals[stock] = price
             elif price > vwap * self.sell_trigger \
                     and notional < self.max_notional:
-                signals[stock] = - price
+                signals[stock] = -price
 
         # If this is the first trade of the day, it logs the notional.
         if (self.d + datetime.timedelta(days=1)) < tradeday:
@@ -100,13 +86,7 @@ class VolumeWeightAveragePrice(TradingFactory):
                               + tradeday.strftime('%m/%d/%y'))
             self.d = tradeday
 
-        ''' ---------------------------------------------------   Orders  --'''
-        if signals \
-                and self.datetime.to_pydatetime() > self.portfolio.start_date:
-            order_book = self.manager.trade_signals_handler(signals)
-            for stock in order_book:
-                if self.debug:
-                    self.logger.notice('{}: Ordering {} {} stocks'.format(
-                        self.datetime, stock, order_book[stock]))
-                self.order(stock, order_book[stock])
-                notional = notional + price * order_book[stock]
+        if not self.datetime.to_pydatetime() > self.portfolio.start_date:
+            signals = {}
+
+        return signals

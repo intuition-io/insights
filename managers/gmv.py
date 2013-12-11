@@ -52,11 +52,11 @@ class GlobalMinimumVariance(PortfolioFactory):
             allocations[sid] = - self.portfolio.positions[sid].amount
 
         if len(to_buy) > 0:
-            if 'historical_prices' in parameters['algo']:
-                returns = parameters['algo']['historical_prices']
+            if 'historical_prices' in parameters:
+                returns = parameters['historical_prices']
             else:
                 #TODO Download it or check in database
-                #NOTE Download allows here daily data, use google instead ?
+                #NOTE Download uses here daily data, use google instead ?
                 self.log.notice('No returns provided, downloading them')
                 returns_df = self.remote.fetch_equities_daily(
                     to_buy, returns=True, indexes={},

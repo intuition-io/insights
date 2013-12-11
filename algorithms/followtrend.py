@@ -15,7 +15,7 @@
 
 
 import numpy as np
-#import statsmodels.api as sm
+import statsmodels.api as sm
 
 from zipline.transforms import batch_transform
 
@@ -28,17 +28,16 @@ def ols_transform(data):
     for sid in data.price:
         prices = data.price[sid].values
         x = np.arange(1, len(prices) + 1)
-        print(x)
         #NOTE Dev stuff: Without statsmodels, no scipy and without those two
         #     libs, container is much more quick to build
-        #x = sm.add_constant(x, prepend=True)
-        #regression[sid] = sm.OLS(prices, x).fit().params
-        regression[sid] = 0.0
+        x = sm.add_constant(x, prepend=True)
+        regression[sid] = sm.OLS(prices, x).fit().params
     return regression
 
 
 # http://nbviewer.ipython.org/4631031
 class FollowTrend(TradingFactory):
+
     def initialize(self, properties):
 
         self.debug = properties.get('debug', False)
@@ -56,19 +55,7 @@ class FollowTrend(TradingFactory):
         self.inter = 0
         self.slope = 0
 
-    def handle_data(self, data):
-
-        if self.initialized:
-            self.manager.update(
-                self.portfolio,
-                self.datetime,
-                self.perf_tracker.cumulative_risk_metrics.to_dict(),
-                save=self.save,
-                widgets=False)
-        else:
-            # Perf_tracker need at least a turn to have an index
-            self.initialized = True
-
+    def event(self, data):
         self.buy = self.sell = False
 
         coeffs = self.ols_transform.handle_data(data)
@@ -92,3 +79,5 @@ class FollowTrend(TradingFactory):
         self.record(slope=self.slope,
                     buy=self.buy,
                     sell=self.sell)
+
+        return {}

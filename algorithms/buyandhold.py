@@ -15,10 +15,10 @@
 
 
 from intuition.zipline.algorithm import TradingFactory
+import intuition.modules.plugins.database as database
 
 
 #TODO Should handle in parameter all of the set_*
-#TODO stop_trading or process_instruction are common methods
 class BuyAndHold(TradingFactory):
     '''
     Simpliest algorithm ever, just buy every stocks at the first frame
@@ -31,72 +31,23 @@ class BuyAndHold(TradingFactory):
         self.debug = properties.get('debug', False)
         self.save = properties.get('save', False)
 
-        self.loops = 0
+    def preamble(self, data):
+        if self.save:
+            self.db = database.RethinkdbBackend(self.manager.name, True)
 
-    def handle_data(self, data):
-        self.loops += 1
+    def event(self, data):
         signals = {}
-
-        if self.debug:
-            print('\n' + 79 * '=')
-            print self.portfolio
-            print(79 * '=' + '\n')
-
         ''' ---------------------------------------------------    Init   --'''
-        if self.initialized:
-            user_instruction = self.manager.update(
-                self.portfolio,
-                self.datetime,
-                self.perf_tracker.cumulative_risk_metrics.to_dict(),
-                save=self.save,
-                widgets=False)
-            self.process_instruction(user_instruction)
-            #self.db.save_portfolio(self.datetime, self.portfolio)
-            #self.db.save_metrics(
-            #   self.datetime, self.perf_tracker.cumulative_risk_metrics)
-        else:
-            # Perf_tracker need at least a turn to have an index
-            self.initialized = True
-            #self.db = database.RethinkdbBackend(self.manager.name, True)
 
-        if self.loops == 2:
+        if self.day == 2:
+
+            if self.save:
+                self.db.save_portfolio(self.datetime, self.portfolio)
+                self.db.save_metrics(
+                    self.datetime, self.perf_tracker.cumulative_risk_metrics)
             ''' -----------------------------------------------    Scan   --'''
             for ticker in data:
                 signals[ticker] = data[ticker].price
 
         ''' ---------------------------------------------------   Orders  --'''
-        if signals:
-            orderBook = self.manager.trade_signals_handler(signals)
-            for stock in orderBook:
-                if self.debug:
-                    self.logger.notice('{}: Ordering {} {} stocks'.format(
-                        self.datetime, stock, orderBook[stock]))
-                self.order(stock, orderBook[stock])
-
-    def process_instruction(self, instruction):
-        '''
-        Process orders from instruction
-        '''
-        if instruction:
-            self.logger.info('Processing user instruction')
-            if (instruction['command'] == 'order') \
-                    and ('amount' in instruction):
-                self.logger.error('{}: Ordering {} {} stocks'.format(
-                    self.datetime,
-                    instruction['amount'],
-                    instruction['asset']))
-
-    #NOTE self.done flag could be used to avoid in zipline waist of computation
-    #TODO Anyway should find a more elegant way
-    def stop_trading(self):
-        ''' Convenient method to stop calling user algorithm and just finish
-        the simulation'''
-        self.logger.info('Trader out of the market')
-        #NOTE Selling every open positions ?
-        # Saving the portfolio in database, eventually for reuse
-        self.manager.save_portfolio(self.portfolio)
-
-        # Closing generator
-        self.date_sorted.close()
-        #self.set_datetime(self.sim_params.last_close)
-        self.done = True
+        return signals

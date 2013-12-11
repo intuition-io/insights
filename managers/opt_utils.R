@@ -13,7 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#TODO move utils function like mysql access in a dedicated module (or somewhat common in R package design)
+#TODO move utils function like mysql access in a dedicated module (or somewhat
+#     common in R package design)
 
 # From http://statsadventure.blogspot.fr
 #TODO - transaction costs, turnover constraints
@@ -42,7 +43,7 @@ reweight = function(returns, startWeight){
     n          = nrow(returns)
     lastWeight = as.vector(startWeight)
     outReturn  = data.frame()
-     
+
     for(i in seq(1,n)){
         rts        = as.vector(exp(returns[i,]))
         w          = lastWeight * rts
@@ -91,77 +92,18 @@ downloadOneSerie = function (symbol, from, to) {
     return(input)
 }
 
-## Do the same as above, but from sql database
-serieFromDB <- function(symbol,
-                        from,
-                        to,                     #TODO default to today
-                        dbfile='default.json')
-{
-
-    flog.info('Fetching serie from database')
-    flog.info('Reading MySQL configuration')
-    config <- fromJSON(file(paste('~/.intuition', dbfile, sep='/'), 'r'))$mysql
-
-    flog.debug('Connecting to MySQL')
-    stocksDB = dbConnect(MySQL(),
-                         user=config['user'][[1]],
-                         password=config['password'][[1]],
-                         dbname=config['database'][[1]],
-                         host=config['hostname'][[1]])
-    on.exit(dbDisconnect(stocksDB))
-
-    stmt <- paste("select Date, AdjClose from Quotes where Quotes.Ticker = ", symbol, " and Quotes.Date >= ", from, " and Quotes.Date <= ", to, "", sep="'") 
-    flog.info('Execute: %s', stmt)
-    rs = dbSendQuery(stocksDB, stmt)
-    inputTmp = fetch(rs, -1)
-    input <- xts(inputTmp['AdjClose'], order.by=as.Date(inputTmp$Date))
-
-    # Character Strings for Column Names
-    adjClose    = paste(symbol, ".Adj.Close", sep = "")
-    inputReturn = paste(symbol, ".Return", sep    = "")
-    CReturn     = paste(symbol, ".CReturn", sep   = "")
-
-    # Calculate the Returns and put it on the time series
-    #input.Return    = xts(returns(input), order.by=as.Date(inputTmp$Date))
-    input.Return    = xts(ROC(input), order.by=as.Date(inputTmp$Date))
-    input           = merge(input, input.Return)
-    colnames(input) = c(adjClose, inputReturn)
-
-    #Calculate the cumulative return and put it on the time series
-    flog.info('Computing cumulative return')
-    input.first                = input[, adjClose][1]
-    input.CReturn              = fapply(timeSeries(input[,adjClose]), FUN = function(x) log(x) - log(input.first[[1]]))
-    colnames(input.CReturn)[1] = CReturn
-    input                      = merge(input,input.CReturn)
-
-    rm(input.first, input.Return, input.CReturn, adjClose, inputReturn, CReturn, inputTmp)
-
-    if (dbHasCompleted(rs))
-    {
-        dbClearResult(rs)
-    }
-    return(input)
-}
-
 # Main entry for data access
 importSeries <- function(symbols,
-                         from, 
-                         to, 
-                         source='yahoo')
+                         from,
+                         to)
 {
     merged <- NULL
     for(sym in symbols)
     {
         flog.info('Fetching %s from %s', sym, source)
-        if (source == 'yahoo')
-        {
-            # Remote access to quotes, provided by yahoo! finance
-            returns = downloadOneSerie(sym, from, to)
-        }
-        else if (source == 'mysql')
-        {
-            returns = serieFromDB(sym, from, to)
-        }
+        # Remote access to quotes, provided by yahoo! finance
+        returns = downloadOneSerie(sym, from, to)
+
         # Merging with previous downloads
         if (!is.null(merged))
             merged = merge(merged, returns)
@@ -342,9 +284,9 @@ usage <- function(symbols)
     to   = "2011-12-16"
     #returnNames = c("xom.Return","ibm.Return","ief.Return")
 
-    data = importSeries(symbols, from, to, source='mysql')
-    for (i in seq(length(symbols))) 
-    { 
+    data = importSeries(symbols, from, to)
+    for (i in seq(length(symbols)))
+    {
         symbols[i] = paste(symbols[i], '.Return', sep='')
     }
 
