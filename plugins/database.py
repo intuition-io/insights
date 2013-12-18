@@ -16,25 +16,48 @@
 
 import os
 import copy
-
 import logbook
+
 import rethinkdb as rdb
+#from influxdb import InfluxDBClient
 
 
 # We will use these settings later in the code to
 # connect to the RethinkDB server.
 RDB_CONFIG = {
-    'host': os.getenv('RDB_HOST', 'localhost'),
-    'port': os.getenv('RDB_PORT', 28015),
-    'db': os.getenv('RDB_DB', 'intuition')
+    'host': os.getenv('DB_HOST', 'localhost'),
+    'port': os.getenv('DB_PORT', 28015),
+    'db': os.getenv('DB_NAME', 'intuition')
 }
 
-log = logbook.Logger('intuition.modules.managers.database')
+IDB_CONFIG = {
+    'host': os.getenv('DB_HOST', 'localhost'),
+    'port': os.getenv('DB_PORT', 8086),
+    'db': os.getenv('DB_NAME', 'intuition'),
+    'user': os.getenv('DB_USER', 'quant'),
+    'password': os.getenv('DB_PASSWORD', 'secret')
+}
+
+log = logbook.Logger('intuition.modules.database')
 
 
+class InfluxdbBackend():
+    '''
+    Adds InfluxDB database backend to the portfolio
+    '''
+    def __init__(self, name):
+      pass
+        #self.session = InfluxDBClient(IDB_CONFIG['host'],
+                                      #IDB_CONFIG['port'],
+                                      #IDB_CONFIG['user'],
+                                      #IDB_CONFIG['password'],
+                                      #IDB_CONFIG['db'])
+
+
+#TODO Store TradingAlgo.recorded_vars
 class RethinkdbBackend():
     '''
-    This class adds database backend to the portfolio
+    Adds RethinkDB database backend to the portfolio
     '''
     def __init__(self, name, reset=False):
         self.session = self._connection()
@@ -54,6 +77,7 @@ class RethinkdbBackend():
         return result.get('created', 0) == 1
 
     def _connection(self):
+        #TODO Check if the database exists
         return rdb.connect(host=RDB_CONFIG['host'],
                            port=RDB_CONFIG['port'],
                            db=RDB_CONFIG['db'])
@@ -86,6 +110,7 @@ class RethinkdbBackend():
         '''
         Stores in database zipline.perf_tracker.cumulative_risk_metrics
         '''
+        log.info('Saving cummulative metrics in database')
         result = rdb.table(self.cmr_table).insert(
             {'date': date,
              'cmr': cmr.to_dict()}).run(self.session)

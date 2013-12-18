@@ -14,8 +14,10 @@
 # limitations under the License.
 
 
-from intuition.zipline.algorithm import TradingFactory
 from zipline.transforms import MovingAverage
+
+from intuition.zipline.algorithm import TradingFactory
+import intuition.modules.plugins.database as database
 
 
 class DualMovingAverage(TradingFactory):
@@ -47,11 +49,19 @@ class DualMovingAverage(TradingFactory):
         self.long_mavgs = []
 
     def preamble(self, data):
+        if self.save:
+            self.db = database.RethinkdbBackend(self.manager.name, True)
         for t in data:
             self.invested[t] = False
 
     def event(self, data):
         signals = {}
+        self.logger.debug('Processing event {}'.format(self.datetime))
+
+        if self.save:
+            self.db.save_portfolio(self.datetime, self.portfolio)
+            self.db.save_metrics(
+                self.datetime, self.perf_tracker.cumulative_risk_metrics)
 
         ''' ---------------------------------------------------    Scan   --'''
         for ticker in data:

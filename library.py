@@ -27,7 +27,6 @@ log = logbook.Logger('intuition.library')
 
 
 from intuition.modules.algorithms.buyandhold import BuyAndHold
-from intuition.modules.algorithms.followtrend import FollowTrend
 from intuition.modules.algorithms.gradient import StochasticGradientDescent
 from intuition.modules.algorithms.momentum import Momentum
 from intuition.modules.algorithms.movingaverage import DualMovingAverage
@@ -46,7 +45,7 @@ from intuition.modules.sources.live.equities import EquitiesLiveSource
 from intuition.modules.sources.live.forex import ForexLiveSource
 
 
-algorithms = {'BuyAndHold': BuyAndHold,'FollowTrend': FollowTrend,'StochasticGradientDescent': StochasticGradientDescent,'Momentum': Momentum,'DualMovingAverage': DualMovingAverage,'RegularRebalance': RegularRebalance,'StddevBased': StddevBased,'AutoAdjustingStopLoss': AutoAdjustingStopLoss,'VolumeWeightAveragePrice': VolumeWeightAveragePrice,}
+algorithms = {'BuyAndHold': BuyAndHold,'StochasticGradientDescent': StochasticGradientDescent,'Momentum': Momentum,'DualMovingAverage': DualMovingAverage,'RegularRebalance': RegularRebalance,'StddevBased': StddevBased,'AutoAdjustingStopLoss': AutoAdjustingStopLoss,'VolumeWeightAveragePrice': VolumeWeightAveragePrice,}
 
 portfolio_managers = {'Constant': Constant,'Fair': Fair,'GlobalMinimumVariance': GlobalMinimumVariance,'OptimalFrontier': OptimalFrontier,}
 

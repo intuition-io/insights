@@ -24,9 +24,8 @@ from intuition.zipline.algorithm import TradingFactory
 # https://www.quantopian.com/posts/global-minimum-variance-portfolio?c=1
 class RegularRebalance(TradingFactory):
     '''
-    For this example, we're going to write a simple momentum script.  When
-    the stock goes up quickly, we're going to buy; when it goes down quickly,
-    we're going to sell.  Hopefully we'll ride the waves.
+    Reconsidere the portfolio allocation every <refresh_period> periods,
+    providing to the portfolio strategy <window_length> days of quote data.
     '''
 
     def initialize(self, properties):
@@ -65,7 +64,6 @@ class RegularRebalance(TradingFactory):
             signals[sid] = data[sid].price
 
         self.manager.advise(historical_prices=daily_returns)
-        #self.process_signals(signals, historical_prices=daily_returns)
         return signals
 
 
