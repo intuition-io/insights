@@ -61,7 +61,6 @@ class ForexLiveSource(LiveDataFactory):
                 break
             log.debug('Waiting for Forex update')
             time.sleep(30)
-        #import ipdb; ipdb.set_trace()
         #FIXME We need volume field to be consistent with the API
         row = {}
         for sid in rates.columns:

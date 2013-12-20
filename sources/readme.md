@@ -41,6 +41,7 @@ class MySource(DataFactory):
     14/03| ____ | ____ | _____
     15/03|      |      |
     '''
+    return pd.DataFrame()
 
   @property
   def mapping(self):

@@ -46,7 +46,7 @@ class InfluxdbBackend():
     Adds InfluxDB database backend to the portfolio
     '''
     def __init__(self, name):
-      pass
+        pass
         #self.session = InfluxDBClient(IDB_CONFIG['host'],
                                       #IDB_CONFIG['port'],
                                       #IDB_CONFIG['user'],
@@ -63,6 +63,10 @@ class RethinkdbBackend():
         self.session = self._connection()
         self.pf_table = name + 'Portfolio'
         self.cmr_table = name + 'Risks'
+
+        # Prepare the database
+        if RDB_CONFIG['db'] not in rdb.db_list().run(self.session):
+            rdb.db_create(RDB_CONFIG['db'])
         if reset:
             self._reset_data()
 
@@ -77,7 +81,7 @@ class RethinkdbBackend():
         return result.get('created', 0) == 1
 
     def _connection(self):
-        #TODO Check if the database exists
+        #TODO Use .repl()
         return rdb.connect(host=RDB_CONFIG['host'],
                            port=RDB_CONFIG['port'],
                            db=RDB_CONFIG['db'])
