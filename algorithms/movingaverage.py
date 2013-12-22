@@ -58,6 +58,7 @@ class DualMovingAverage(TradingFactory):
         signals = {}
         self.logger.debug('Processing event {}'.format(self.datetime))
 
+        import ipdb; ipdb.set_trace()
         if self.save and self.day >= 2:
             self.db.save_portfolio(self.datetime, self.portfolio)
             self.db.save_metrics(

@@ -16,6 +16,7 @@
 
 import logbook
 import random
+import pandas as pd
 
 from intuition.zipline.data_source import LiveDataFactory
 
@@ -49,4 +50,4 @@ class FakeLiveSource(LiveDataFactory):
         for sid in self.sids:
             data[sid] = self._feed_random_data()
 
-        return data
+        return pd.DataFrame(data)

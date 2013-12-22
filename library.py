@@ -42,6 +42,7 @@ from intuition.modules.sources.backtest.csv import CSVSource
 from intuition.modules.sources.backtest.quandl import QuandlSource
 from intuition.modules.sources.backtest.yahoostock import YahooPriceSource,YahooOHLCSource
 from intuition.modules.sources.live.equities import EquitiesLiveSource
+from intuition.modules.sources.live.fake import FakeLiveSource
 from intuition.modules.sources.live.forex import ForexLiveSource
 
 
@@ -49,7 +50,7 @@ algorithms = {'BuyAndHold': BuyAndHold,'StochasticGradientDescent': StochasticGr
 
 portfolio_managers = {'Constant': Constant,'Fair': Fair,'GlobalMinimumVariance': GlobalMinimumVariance,'OptimalFrontier': OptimalFrontier,}
 
-data_sources = {'CSVSource': CSVSource,'QuandlSource': QuandlSource,'YahooPriceSource': YahooPriceSource,'YahooOHLCSource': YahooOHLCSource,'EquitiesLiveSource': EquitiesLiveSource,'ForexLiveSource': ForexLiveSource,}
+data_sources = {'CSVSource': CSVSource,'QuandlSource': QuandlSource,'YahooPriceSource': YahooPriceSource,'YahooOHLCSource': YahooOHLCSource,'EquitiesLiveSource': EquitiesLiveSource,'FakeLiveSource': FakeLiveSource,'ForexLiveSource': ForexLiveSource,}
 
 
 #TODO optimization algos

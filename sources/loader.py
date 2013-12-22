@@ -34,7 +34,6 @@ class LiveBenchmark(object):
             self.offset = pd.datetools.Minute()
         elif frequency == 'daily':
             self.offset = pd.datetools.Day()
-            #self.offset = pd.datetools.day
         else:
             raise NotImplementedError()
 
@@ -49,9 +48,9 @@ class LiveBenchmark(object):
         event_dt = self.normalize_date(datetime.now())
 
         #TODO Handle invalid code
-        for exchange, infos in datautils.Exchange.iteritems():
-            if infos['index'] == bm_symbol:
-                code = datautils.Exchange[exchange]['code']
+        for exchange, infos in datautils.Exchanges.iteritems():
+            if infos['symbol'] == bm_symbol:
+                code = datautils.Exchanges[exchange]['code']
                 break
 
         bm_returns, tr_curves = zipline.load_market_data(bm_symbol)
