@@ -28,7 +28,6 @@ class BuyAndHold(TradingFactory):
         #     Could configure every common parameters in Backtester engine
         #     and use setupe_strategie as an update
         #self.manager.setup_strategy({'commission_cost': self.commission.cost})
-        self.debug = properties.get('debug', False)
         self.save = properties.get('save', False)
 
     def preamble(self, data):
@@ -39,12 +38,12 @@ class BuyAndHold(TradingFactory):
         signals = {}
         ''' ---------------------------------------------------    Init   --'''
 
-        if self.day == 2:
+        if self.day >= 2 and self.save:
+            self.db.save_portfolio(self.datetime, self.portfolio)
+            #self.db.save_metrics(
+                #self.datetime, self.perf_tracker.cumulative_risk_metrics)
 
-            if self.save:
-                self.db.save_portfolio(self.datetime, self.portfolio)
-                self.db.save_metrics(
-                    self.datetime, self.perf_tracker.cumulative_risk_metrics)
+        if self.day == 2:
             ''' -----------------------------------------------    Scan   --'''
             for ticker in data:
                 signals[ticker] = data[ticker].price

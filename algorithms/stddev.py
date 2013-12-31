@@ -75,11 +75,12 @@ class StddevBased(TradingFactory):
                 continue
 
             # - Set order size
-            # - (Set here as "starting_cash/1000" - which coupled with the below
-            # "and price < 1000" - is a scalable way of setting (initially :P)
+            # - (Set here as "starting_cash/1000" - which coupled with the
+            # below "and price < 1000" - is a scalable way of setting
+            # (initially :P)
             # affordable order quantities (for most stocks).
-            # - Very very low for forex
-            total_tradesder_amount = self.portfolio.starting_cash / 1000
+            # Very very low for forex
+            order_amount = self.portfolio.starting_cash / 1000
 
             # Open Long Position if current price is larger than the 9 day
             # volume weighted average plus 60% of the standard deviation

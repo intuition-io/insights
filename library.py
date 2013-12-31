@@ -58,11 +58,11 @@ data_sources = {'CSVSource': CSVSource,'QuandlSource': QuandlSource,'YahooPriceS
 def check_availability(algo, manager, source):
   if algo not in algorithms:
     raise NotImplementedError('Algorithm {} not available or implemented'.format(algo))
-  log.debug('Algorithm {} available, getting a reference on it.'.format(algo))
+  log.debug('Algorithm {} available'.format(algo))
 
   if (manager) and (manager not in portfolio_managers):
     raise NotImplementedError('Manager {} not available or implemented'.format(manager))
-  log.debug('Manager {} available, getting a reference on it.'.format(manager))
+  log.debug('Manager {} available'.format(manager))
 
   if (source) and (source not in data_sources):
     raise NotImplementedError('Source {} not available or implemented'.format(source))

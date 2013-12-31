@@ -50,7 +50,7 @@ class AndroidPush():
                                 auth=(self.api_key, ''))
         if response.ok:
             for device in response.json()['devices']:
-                if device_name == device['extras']['model'] or:
+                if device_name == device['extras']['model']:
                     #TODO Check device['extras']['nickname'] as well
                     device_found = device
         return device_found

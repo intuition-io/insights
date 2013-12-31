@@ -61,8 +61,10 @@ class RethinkdbBackend():
     '''
     def __init__(self, name, reset=False):
         self.session = self._connection()
-        self.pf_table = name + 'Portfolio'
-        self.cmr_table = name + 'Risks'
+        #TODO Two databases : portfolios and metrics
+        #self.pf_table = name + 'Portfolio'
+        self.pf_table = name
+        self.cmr_table = name
 
         # Prepare the database
         if RDB_CONFIG['db'] not in rdb.db_list().run(self.session):

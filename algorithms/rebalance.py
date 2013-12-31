@@ -19,6 +19,7 @@ import numpy as np
 from zipline.transforms import batch_transform
 
 from intuition.zipline.algorithm import TradingFactory
+import intuition.modules.plugins.database as database
 
 
 # https://www.quantopian.com/posts/global-minimum-variance-portfolio?c=1
@@ -30,7 +31,6 @@ class RegularRebalance(TradingFactory):
 
     def initialize(self, properties):
 
-        self.debug = properties.get('debug', False)
         self.save = properties.get('save', False)
 
         # This is the lookback window that the entire algorithm depends on
@@ -46,18 +46,25 @@ class RegularRebalance(TradingFactory):
         #Set commission
         #self.set_commission(commission.PerTrade(cost=7.95))
 
+    def preamble(self, data):
+        if self.save:
+            self.db = database.RethinkdbBackend(self.manager.name, True)
+
     def event(self, data):
         signals = {}
+
+        if self.day >= 2 and self.save:
+            self.db.save_portfolio(self.datetime, self.portfolio)
 
         #get 20 days of prices for each security
         daily_returns = self.returns_transform.handle_data(data)
 
         #circuit breaker in case transform returns none
         if daily_returns is None:
-            return
+            return {}
         #circuit breaker, only calculate every 20 days
         if self.day % self.refresh_period is not 0:
-            return
+            return {}
 
         #reweight portfolio
         for i, sid in enumerate(data):
