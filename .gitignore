@@ -42,4 +42,4 @@ nosetests.xml
 .ropeproject
 
 # Not ready
-optimization
+optimization/*

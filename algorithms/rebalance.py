@@ -46,7 +46,7 @@ class RegularRebalance(TradingFactory):
         #Set commission
         #self.set_commission(commission.PerTrade(cost=7.95))
 
-    def preamble(self, data):
+    def warming(self, data):
         if self.save:
             self.db = database.RethinkdbBackend(self.manager.name, True)
 

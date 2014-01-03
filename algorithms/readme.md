@@ -1,7 +1,6 @@
 Algorithms
 ==========
 
-
 API
 ---
 
@@ -26,7 +25,7 @@ class MyAlgo(TradingFactory):
     self.debug = properties.get('debug', False)
     self.save = properties.get('save', False)
 
-  def preamble(self, data):
+  def warming(self, data):
     '''
     An other function ran once, after everything has been initialized, the
     very first time of trading

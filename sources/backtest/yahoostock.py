@@ -17,7 +17,7 @@
 import logbook
 from intuition.zipline.data_source import DataFactory
 
-from intuition.data.remote import Remote
+import intuition.data.remote as remote
 
 
 log = logbook.Logger('intuition.source.backtest.yahoo')
@@ -37,7 +37,7 @@ class YahooPriceSource(DataFactory):
         }
 
     def get_data(self):
-        return Remote().fetch_equities_daily(
+        return remote.Data().fetch_equities_daily(
             self.sids, indexes={}, start=self.start, end=self.end)
 
 
@@ -62,5 +62,5 @@ class YahooOHLCSource(DataFactory):
         return mapping
 
     def get_data(self):
-        return Remote().fetch_equities_daily(
+        return remote.Data().fetch_equities_daily(
             self.sids, ohlc=True, indexes={}, start=self.start, end=self.end)

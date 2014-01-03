@@ -61,7 +61,7 @@ class OptimalFrontier(PortfolioFactory):
             returns = pd.rpy.common.convert_to_r_matrix(
                 pd.DataFrame(parameters['historical_prices']))
         else:
-            returns = self.remote.fetch_equities_daily(
+            returns = self.data.fetch_equities_daily(
                 positions, r_type=True, returns=True, indexes={},
                 start=date-pd.datetools.Day(parameters.get('loopback', 50)),
                 end=date)

@@ -19,7 +19,7 @@ import logbook
 import pandas as pd
 
 from intuition.zipline.data_source import LiveDataFactory
-from intuition.data.remote import Remote
+import intuition.data.remote as remote
 
 
 log = logbook.Logger('intuition.sources.live.equities')
@@ -30,7 +30,7 @@ class EquitiesLiveSource(LiveDataFactory):
     At each event datetime of the provided index, EquitiesLiveSource fetchs
     live data from google finance api.
     """
-    remote = Remote()
+    data = remote.Data()
 
     @property
     def mapping(self):
@@ -43,8 +43,8 @@ class EquitiesLiveSource(LiveDataFactory):
         }
 
     def get_data(self):
-        snapshot = self.remote.fetch_equities_snapshot(symbols=self.sids,
-                                                       level=1)
+        snapshot = self.data.fetch_equities_snapshot(symbols=self.sids,
+                                                     level=1)
         if snapshot.empty:
             log.error('** No data available, maybe stopped by google ?')
             sys.exit(2)

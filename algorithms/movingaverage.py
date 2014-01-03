@@ -48,7 +48,7 @@ class DualMovingAverage(TradingFactory):
         self.short_mavgs = []
         self.long_mavgs = []
 
-    def preamble(self, data):
+    def warming(self, data):
         if self.save:
             self.db = database.RethinkdbBackend(self.manager.name, True)
         for t in data:
@@ -58,7 +58,6 @@ class DualMovingAverage(TradingFactory):
         signals = {}
         self.logger.debug('Processing event {}'.format(self.datetime))
 
-        import ipdb; ipdb.set_trace()
         if self.save and self.day >= 2:
             self.db.save_portfolio(self.datetime, self.portfolio)
             self.db.save_metrics(

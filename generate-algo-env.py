@@ -20,7 +20,7 @@
 '''generator.
 
 Usage:
-  generate_algo_env.py --author=<name> --strategy=<name> [--manager=<name>] [--year=<xxxx>]
+  generate_algo_env.py --author=<name> --strategy=<name>
   generate_algo_env.py (-h | --help)
   generate_algo_env.py --version
 
@@ -29,9 +29,6 @@ Options:
   --version           Show version.
   --author=<name>     Author of the algorithm
   --strategy=<name>  Strategie name
-  --manager=<name>    Manager name
-  --year=<xxxx>       Current year for copyright [default: 2013].
-
 '''
 
 
@@ -64,6 +61,6 @@ if __name__ == '__main__':
 
     completion = {'author': arguments['--author'],
                   'strategy': arguments['--strategy'],
-                  'year': arguments['--year']}
+                  'year': '2014'}
     print(completion)
     generate_from_template(completion, 'strategy.tpl', 'test.py')

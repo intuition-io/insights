@@ -1,0 +1,7 @@
+rethinkdb
+redis
+statsmodels
+rpy2
+scipy
+pymongo
+PyYAML

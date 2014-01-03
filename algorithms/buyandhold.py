@@ -29,10 +29,8 @@ class BuyAndHold(TradingFactory):
         #     and use setupe_strategie as an update
         #self.manager.setup_strategy({'commission_cost': self.commission.cost})
         self.save = properties.get('save', False)
-
-    def preamble(self, data):
         if self.save:
-            self.db = database.RethinkdbBackend(self.manager.name, True)
+            self.db = database.RethinkdbBackend(self.identity, True)
 
     def event(self, data):
         signals = {}
