@@ -28,8 +28,6 @@ class QuandlSource(DataFactory):
     '''
 
     def get_data(self):
-        #TODO Works here for one value, make it later a panel
-
         # API key must be provided here or store in the environment
         # (QUANDL_API_KEY)
         feed = DataQuandl()

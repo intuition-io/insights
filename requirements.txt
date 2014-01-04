@@ -1,7 +1,8 @@
 rethinkdb
+patsy
 redis
-statsmodels
 rpy2
 scipy
 pymongo
 PyYAML
+statsmodels

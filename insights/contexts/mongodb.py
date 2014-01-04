@@ -14,7 +14,7 @@
 # limitations under the License.
 
 
-import os
+import pymongo
 import datetime
 import pytz
 
@@ -22,39 +22,27 @@ import intuition.data.utils as datautils
 import intuition.utils.dates as datesutils
 
 
-default_dir = '/'.join([os.environ['HOME'], '.intuition'])
+database = 'intuition'
+collection = 'contexts'
 
 
+# Super interface: http://genghisapp.com/
 def _load_context(storage):
-    if storage.find('intuition') != -1:
-        # We got a relative path, try at the default location
-        storage = '/'.join([default_dir, storage.split('/')[-1]])
-    if storage.find('json') > 0:
-        fmt_module = __import__('json')
-    elif storage.find('yaml') > 0:
-        fmt_module = __import__('yaml')
-    else:
-        raise NotImplementedError('unsupported file format: %s' % storage)
+    tmp = storage.split('/')
+    uri = tmp[0]
+    conf_id = tmp[1]
+    client = pymongo.MongoClient("mongodb://{}/".format(uri))
+    assert (database in client.database_names())
+    db = client[database]
+    print 'connected to {} database'.format(db.name)
+    assert (collection in db.collection_names())
+    conf_doc = db[collection]
+    print 'got {} document'.format(conf_doc.name)
 
-    try:
-        context = fmt_module.load(open(storage, 'r'))
-    except IOError, e:
-        print('loading json configuration: %s', e)
-        context = {}
-
-    return context
+    return conf_doc.find_one({'id': conf_id})
 
 
 def _normalize_context(context):
-    if 'start' in context:
-        if isinstance(context['start'], datetime.date):
-            context['start'] = datetime.date.strftime(
-                context['start'], format='%Y-%m-%d')
-    if 'end' in context:
-        if isinstance(context['end'], datetime.date):
-            context['end'] = datetime.date.strftime(
-                context['end'], format='%Y-%m-%d')
-
     exchange = datautils.detect_exchange(context['universe'])
 
     dummy_dates = datesutils.build_date_index(
@@ -72,7 +60,6 @@ def _normalize_context(context):
 
 
 def build_context(storage):
-    #import ipdb; ipdb.set_trace()
     try:
         context = _load_context(storage)
     except Exception as e:

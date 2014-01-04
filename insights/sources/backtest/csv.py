@@ -32,7 +32,6 @@ class CSVSource(DataFactory):
     """
 
     def get_data(self):
-        #TODO Iterate over self.sids
         tmp_data = {}
         for sid in self.sids:
             if sid.rfind('csv') == -1:

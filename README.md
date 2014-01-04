@@ -1,9 +1,9 @@
-Intuition Modules
-=================
+Insights
+========
 
 [![Code Health](https://landscape.io/github/hackliff/intuition-modules/master/landscape.png)](https://landscape.io/github/hackliff/intuition-modules/master)
 
-> Quantitative algorithms, portfolio managers data sources and context builders
+> Quantitative algorithms, portfolio managers data sources and contexts
 > for [Intuition](https://github.com/hackliff/intuition)
 
 

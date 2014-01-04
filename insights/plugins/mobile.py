@@ -64,7 +64,7 @@ class AndroidPush():
         elif 'file' in payload:
             push_type = 'file'
             #TODO File push needs multi-part form encoding
-            raise NotImplementedError
+            raise NotImplementedError()
         elif 'items' in payload:
             push_type = 'list'
         elif 'body' in payload:

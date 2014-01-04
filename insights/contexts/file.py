@@ -14,7 +14,7 @@
 # limitations under the License.
 
 
-import pymongo
+import os
 import datetime
 import pytz
 
@@ -22,36 +22,43 @@ import intuition.data.utils as datautils
 import intuition.utils.dates as datesutils
 
 
-database = 'intuition'
-collection = 'contexts'
+default_dir = '/'.join([os.environ['HOME'], '.intuition'])
 
 
-# Super interface: http://genghisapp.com/
 def _load_context(storage):
-    tmp = storage.split('/')
-    uri = tmp[0]
-    conf_id = tmp[1]
-    client = pymongo.MongoClient("mongodb://{}/".format(uri))
-    assert (database in client.database_names())
-    db = client[database]
-    print 'connected to {} database'.format(db.name)
-    assert (collection in db.collection_names())
-    conf_doc = db[collection]
-    print 'got {} document'.format(conf_doc.name)
+    if storage.find('intuition') != -1:
+        # We got a relative path, try at the default location
+        storage = '/'.join([default_dir, storage.split('/')[-1]])
+    if storage.find('json') > 0:
+        fmt_module = __import__('json')
+    elif storage.find('yaml') > 0:
+        fmt_module = __import__('yaml')
+    else:
+        raise NotImplementedError('unsupported file format: %s' % storage)
 
-    #TODO Use an ID to retrieve the correct configuration
-    context = conf_doc.find_one({'id': conf_id})
-    #context = conf_doc.find_one()
+    try:
+        context = fmt_module.load(open(storage, 'r'))
+    except IOError, e:
+        print('loading json configuration: %s', e)
+        context = {}
 
     return context
 
 
 def _normalize_context(context):
+    if 'start' in context:
+        if isinstance(context['start'], datetime.date):
+            context['start'] = datetime.date.strftime(
+                context['start'], format='%Y-%m-%d')
+    if 'end' in context:
+        if isinstance(context['end'], datetime.date):
+            context['end'] = datetime.date.strftime(
+                context['end'], format='%Y-%m-%d')
+
     exchange = datautils.detect_exchange(context['universe'])
 
     dummy_dates = datesutils.build_date_index(
         context.pop('start', ''), context.pop('end', ''))
-    #TODO Use zipline style to filter instead
     trading_dates = datautils.filter_market_hours(dummy_dates, exchange)
 
     context['exchange'] = exchange
@@ -64,6 +71,7 @@ def _normalize_context(context):
 
 
 def build_context(storage):
+    #import ipdb; ipdb.set_trace()
     try:
         context = _load_context(storage)
     except Exception as e:
