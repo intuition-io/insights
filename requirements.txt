@@ -1,4 +1,5 @@
 numpy
+-e git+https://github.com/pydata/pandas.git@master#egg=pandas-0.13.0-27-gf7aeaeb
 patsy
 redis
 rpy2
@@ -6,7 +7,6 @@ scipy
 pymongo
 PyYAML
 requests
--e git+https://github.com/pydata/pandas.git@master#egg=pandas-0.13.0-27-gf7aeaeb
 statsmodels
 rethinkdb
 influxdb

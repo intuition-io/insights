@@ -17,7 +17,6 @@
 from intuition.zipline.algorithm import TradingFactory
 import insights.plugins.database as database
 #from insights.plugins.utils import debug_portfolio
-from insights.plugins.utils import debug_metrics
 
 
 #TODO Should handle in parameter all of the set_*
@@ -26,9 +25,6 @@ class BuyAndHold(TradingFactory):
     Simpliest algorithm ever, just buy every stocks at the first frame
     '''
     def initialize(self, properties):
-        #self.use(debug_portfolio)
-        self.use(debug_metrics)
-
         self.save = properties.get('save', False)
         if self.save:
             self.use(database.RethinkdbBackend(self.identity, True)

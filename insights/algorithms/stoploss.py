@@ -15,13 +15,16 @@
 
 
 from intuition.zipline.algorithm import TradingFactory
+import insights.plugins.database as database
 
 
 # https://www.quantopian.com/posts/auto-adjusting-stop-loss
 class AutoAdjustingStopLoss(TradingFactory):
     def initialize(self, properties):
-        self.save = properties.get('save', 0)
-        self.debug = properties.get('debug', 0)
+        if properties.get('save', 0):
+            self.use(database.RethinkdbBackend(self.identity, True)
+                     .save_portfolio)
+
         self.base_price = properties.get('base_price', 10)
 
         self.stock = {}

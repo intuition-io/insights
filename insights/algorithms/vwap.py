@@ -17,18 +17,20 @@
 import pytz
 import datetime
 
-from intuition.zipline.algorithm import TradingFactory
 from zipline.transforms import MovingVWAP
+
+from intuition.zipline.algorithm import TradingFactory
+import insights.plugins.database as database
 
 
 # https://www.quantopian.com/posts/updated-multi-sid-example-algorithm-1
 class VolumeWeightAveragePrice(TradingFactory):
-    '''
-    '''
+
     def initialize(self, properties):
         # Common setup
-        self.save = properties.get('save', 0)
-        self.debug = properties.get('debug', 0)
+        if properties.get('save', 0):
+            self.use(database.RethinkdbBackend(self.identity, True)
+                     .save_portfolio)
 
         #self.buy_trigger = properties.get('buy_trigger', 0.995)
         #self.sell_trigger = properties.get('sell_trigger', 1.005)

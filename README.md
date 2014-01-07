@@ -5,13 +5,16 @@ Insights
 [![Coverage Status](https://coveralls.io/repos/hackliff/insights/badge.png)](https://coveralls.io/r/hackliff/insights)
 [![Code Health](https://landscape.io/github/hackliff/insights/develop/landscape.png)](https://landscape.io/github/hackliff/insights/develop)
 
-> Quantitative algorithms, portfolio managers data sources and contexts
-> for [Intuition](https://github.com/hackliff/intuition)
+> Plug-and-play building blocks for modern quants
+
+Quantitative algorithms, portfolio managers data sources, contexts and
+middlewares for [Intuition](https://github.com/hackliff/intuition)
 
 * [Algorithm API](https://github.com/hackliff/insights/blob/develop/algorithms/readme.md)
 * [Portfolio API](https://github.com/hackliff/insights/blob/develop/managers/readme.md)
 * [Data API](https://github.com/hackliff/insights/blob/develop/sources/readme.md)
 * [Contexts](https://github.com/hackliff/insights/blob/develop/contexts/readme.md)
+* [Middlewares](https://github.com/hackliff/insights/blob/develop/contexts/readme.md)
 
 
 Installation
@@ -19,8 +22,7 @@ Installation
 
 ```
 # apt-get install r-base
-# pip install --use-mirrors numpy scipy patsy
-# pip install -e git+https://github.com/hackliff/insights.git@develop#egg=insights-0.0.9
+# pip install insights
 ```
 
 
@@ -50,7 +52,7 @@ class Fair(PortfolioFactory):
         return allocations, expected_return, expected_risk
 ```
 
-Here is a classic buy and hold strategy, with a plugin which stores metrics in
+A classic buy and hold strategy, with a plugin which stores metrics in
 [rethinkdb](www.rethinkdb.com):
 
 ```python
@@ -65,7 +67,7 @@ class BuyAndHold(TradingFactory):
 
         self.save = properties.get('save', False)
         if self.save:
-            self.use(database.RethinkdbBackend(self.identity, True)
+            self.use(database.RethinkdbBackend(self.identity, reset=True)
                      .save_portfolio)
 
     def event(self, data):

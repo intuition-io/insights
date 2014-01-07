@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Xavier Bruhiere
+# Copyright 2014 Xavier Bruhiere
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,8 +14,10 @@
 # limitations under the License.
 
 
-from intuition.zipline.algorithm import TradingFactory
 from zipline.transforms import MovingAverage
+
+from intuition.zipline.algorithm import TradingFactory
+import insights.plugins.database as database
 
 
 # https://www.quantopian.com/posts/this-is-amazing
@@ -25,8 +27,9 @@ class Momentum(TradingFactory):
     #FIXME Many transactions, so makes the algorithm explode when traded with
     #      many positions
     def initialize(self, properties):
-        self.save = properties.get('save', 0)
-        self.debug = properties.get('debug', 0)
+        if properties.get('save', 0):
+            self.use(database.RethinkdbBackend(self.identity, True)
+                     .save_portfolio)
 
         self.max_notional = 100000.1
         self.min_notional = -100000.0

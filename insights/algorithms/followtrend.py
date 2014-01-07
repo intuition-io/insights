@@ -20,6 +20,7 @@ import statsmodels.api as sm
 from zipline.transforms import batch_transform
 
 from intuition.zipline.algorithm import TradingFactory
+import insights.plugins.database as database
 
 
 @batch_transform
@@ -40,8 +41,9 @@ class FollowTrend(TradingFactory):
 
     def initialize(self, properties):
 
-        self.debug = properties.get('debug', False)
-        self.save = properties.get('save', False)
+        if properties.get('save', False):
+            self.use(database.RethinkdbBackend(self.identity, True)
+                     .save_portfolio)
 
         self.buy_trigger = properties.get('buy_trigger', .4)
         self.sell_trigger = properties.get('sell_trigger', -self.buy_trigger)

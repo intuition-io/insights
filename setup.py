@@ -30,8 +30,9 @@ README_MARKDOWN = None
 def get_requirements():
     with open('./requirements.txt') as requirements:
         # Avoid github based requirements
-        deps = requirements.read().split('\n')[-2]
-        deps.append('pandas>=0.13.0.dev')
+        deps = requirements.read().split('\n')[:-1]
+        deps.pop(1)
+        deps.insert(1, 'pandas>=0.13.0.dev')
         return deps
 
 with open('README.md') as markdown_source:
