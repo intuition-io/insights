@@ -31,7 +31,9 @@ class RegularRebalance(TradingFactory):
 
     def initialize(self, properties):
 
-        self.save = properties.get('save', False)
+        if properties.get('save', False):
+            self.use(database.RethinkdbBackend(self.identity, True)
+                     .save_portfolio)
 
         # This is the lookback window that the entire algorithm depends on
         self.refresh_period = properties.get('refresh_period', 10)
@@ -46,14 +48,8 @@ class RegularRebalance(TradingFactory):
         #Set commission
         #self.set_commission(commission.PerTrade(cost=7.95))
 
-        if self.save:
-            self.db = database.RethinkdbBackend(self.identity, True)
-
     def event(self, data):
         signals = {}
-
-        if self.day >= 2 and self.save:
-            self.db.save_portfolio(self.datetime, self.portfolio)
 
         #get 20 days of prices for each security
         daily_returns = self.returns_transform.handle_data(data)

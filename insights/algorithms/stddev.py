@@ -14,14 +14,19 @@
 # limitations under the License.
 
 
-from intuition.zipline.algorithm import TradingFactory
 from zipline.transforms import MovingVWAP, MovingStandardDev
+
+from intuition.zipline.algorithm import TradingFactory
+import insights.plugins.database as database
 
 
 #TODO The portfolio management is included here, make it a stand alone manager
 class StddevBased(TradingFactory):
     def initialize(self, properties):
-        self.save = properties.get('save', 0)
+        if properties.get('save', 0):
+            self.use(database.RethinkdbBackend(self.identity, True)
+                     .save_portfolio)
+
         # Variable to hold opening price of long trades
         self.long_open_price = 0
 

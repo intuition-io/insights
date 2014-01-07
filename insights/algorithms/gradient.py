@@ -21,6 +21,7 @@ import numpy as np
 from zipline.transforms import batch_transform
 
 from intuition.zipline.algorithm import TradingFactory
+import insights.plugins.database as database
 
 
 # https://www.quantopian.com/posts/\
@@ -30,8 +31,9 @@ class StochasticGradientDescent(TradingFactory):
     '''
     '''
     def initialize(self, properties):
-        self.save = properties.get('save', 0)
-        self.debug = properties.get('debug', 0)
+        if properties.get('save', 0):
+            self.use(database.RethinkdbBackend(self.identity, True)
+                     .save_portfolio)
 
         self.rebalance_period = properties.get('rebalance_period', 5)
 

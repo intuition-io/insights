@@ -27,7 +27,10 @@ class DualMovingAverage(TradingFactory):
     again (indicating downwards momentum).
     '''
     def initialize(self, properties):
-        self.save = properties.get('save', False)
+        if properties.get('save', False):
+            self.use(database.RethinkdbBackend(self.identity, True)
+                     .save_portfolio)
+
         long_window = properties.get('long_window', 400)
         short_window = properties.get('short_window', None)
         if short_window is None:
@@ -48,19 +51,12 @@ class DualMovingAverage(TradingFactory):
         self.long_mavgs = []
 
     def warming(self, data):
-        if self.save:
-            self.db = database.RethinkdbBackend(self.manager.name, True)
         for t in data:
             self.invested[t] = False
 
     def event(self, data):
         signals = {}
         self.logger.debug('Processing event {}'.format(self.datetime))
-
-        if self.save and self.day >= 2:
-            self.db.save_portfolio(self.datetime, self.portfolio)
-            self.db.save_metrics(
-                self.datetime, self.perf_tracker.cumulative_risk_metrics)
 
         for ticker in data:
             short_mavg = data[ticker].short_mavg['price']
