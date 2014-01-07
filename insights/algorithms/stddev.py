@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Xavier Bruhiere
+# Copyright 2014 Xavier Bruhiere
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ from zipline.transforms import MovingVWAP, MovingStandardDev
 class StddevBased(TradingFactory):
     def initialize(self, properties):
         self.save = properties.get('save', 0)
-        self.debug = properties.get('debug', 0)
         # Variable to hold opening price of long trades
         self.long_open_price = 0
 
@@ -56,7 +55,6 @@ class StddevBased(TradingFactory):
                            window_length=properties.get('vwap_window', 5))
 
     def event(self, data):
-        '''----------------------------------------------------    Init   --'''
         signals = {}
 
         # Reporting Variables
@@ -64,9 +62,8 @@ class StddevBased(TradingFactory):
         total_trades = self.successes + self.fails
         winning_percentage = self.successes / total_trades * 100
 
-        ''' ---------------------------------------------------    Scan   --'''
         # Data Variables
-        for i, stock in enumerate(data.keys()):
+        for stock in data.keys():
             price = data[stock].price
             vwap_5_day = data[stock].vwap
             equity = self.portfolio.cash + self.portfolio.positions_value

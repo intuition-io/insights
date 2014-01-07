@@ -32,8 +32,9 @@ class OptimalFrontier(PortfolioFactory):
 
         # R stuff: R functions file and rpy interface
         self.r = robjects.r
-        portfolio_opt_file = '/'.join((
-            os.environ['QTRADE'], 'intuition/modules/managers/opt_utils.R'))
+        portfolio_opt_file = '/'.join(
+            [os.path.expanduser('~/.intuition'), 'R', 'opt_utils.R'])
+        assert os.path.exists(portfolio_opt_file)
         self.r('source("{}")'.format(portfolio_opt_file))
 
     def optimize(self, date, to_buy, to_sell, parameters):

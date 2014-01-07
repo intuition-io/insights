@@ -1,5 +1,5 @@
 #
-# Copyright 2013 Xavier Bruhiere
+# Copyright 2014 Xavier Bruhiere
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,7 +15,9 @@
 
 
 from intuition.zipline.algorithm import TradingFactory
-import intuition.modules.plugins.database as database
+import insights.plugins.database as database
+#from insights.plugins.utils import debug_portfolio
+from insights.plugins.utils import debug_metrics
 
 
 #TODO Should handle in parameter all of the set_*
@@ -24,22 +26,16 @@ class BuyAndHold(TradingFactory):
     Simpliest algorithm ever, just buy every stocks at the first frame
     '''
     def initialize(self, properties):
-        #NOTE can't use it here, no self.manager yet. Issue ?
-        #     Could configure every common parameters in Backtester engine
-        #     and use setupe_strategie as an update
-        #self.manager.setup_strategy({'commission_cost': self.commission.cost})
+        #self.use(debug_portfolio)
+        self.use(debug_metrics)
+
         self.save = properties.get('save', False)
         if self.save:
-            self.db = database.RethinkdbBackend(self.identity, True)
+            self.use(database.RethinkdbBackend(self.identity, True)
+                     .save_portfolio)
 
     def event(self, data):
         signals = {}
-        ''' ---------------------------------------------------    Init   --'''
-
-        if self.day >= 2 and self.save:
-            self.db.save_portfolio(self.datetime, self.portfolio)
-            #self.db.save_metrics(
-                #self.datetime, self.perf_tracker.cumulative_risk_metrics)
 
         if self.day == 2:
             ''' -----------------------------------------------    Scan   --'''

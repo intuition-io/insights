@@ -54,7 +54,7 @@ class ForexLiveSource(LiveDataFactory):
 
     def get_data(self):
         while True:
-            rates = self.forex.QueryTrueFX()
+            rates = self.forex.query_trueFX()
             if len(rates.keys()) >= len(self.sids):
                 log.info('New income data, fire an event !')
                 log.debug('Data available:\n{}'.format(rates))

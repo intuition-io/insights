@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Xavier Bruhiere
+# Copyright 2014 Xavier Bruhiere
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import numpy as np
 from zipline.transforms import batch_transform
 
 from intuition.zipline.algorithm import TradingFactory
-import intuition.modules.plugins.database as database
+import insights.plugins.database as database
 
 
 # https://www.quantopian.com/posts/global-minimum-variance-portfolio?c=1
@@ -46,9 +46,8 @@ class RegularRebalance(TradingFactory):
         #Set commission
         #self.set_commission(commission.PerTrade(cost=7.95))
 
-    def warming(self, data):
         if self.save:
-            self.db = database.RethinkdbBackend(self.manager.name, True)
+            self.db = database.RethinkdbBackend(self.identity, True)
 
     def event(self, data):
         signals = {}
@@ -67,7 +66,7 @@ class RegularRebalance(TradingFactory):
             return {}
 
         #reweight portfolio
-        for i, sid in enumerate(data):
+        for sid in data:
             signals[sid] = data[sid].price
 
         self.manager.advise(historical_prices=daily_returns)

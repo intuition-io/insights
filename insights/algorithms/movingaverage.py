@@ -17,7 +17,7 @@
 from zipline.transforms import MovingAverage
 
 from intuition.zipline.algorithm import TradingFactory
-import intuition.modules.plugins.database as database
+import insights.plugins.database as database
 
 
 class DualMovingAverage(TradingFactory):
@@ -34,7 +34,6 @@ class DualMovingAverage(TradingFactory):
             short_window = int(round(
                 properties.get('ma_rate', 0.5) * float(long_window), 2))
         self.threshold = properties.get('threshold', 0)
-        self.debug = properties.get('debug', 0)
 
         self.add_transform(MovingAverage, 'short_mavg', ['price'],
                            window_length=short_window)
@@ -63,7 +62,6 @@ class DualMovingAverage(TradingFactory):
             self.db.save_metrics(
                 self.datetime, self.perf_tracker.cumulative_risk_metrics)
 
-        ''' ---------------------------------------------------    Scan   --'''
         for ticker in data:
             short_mavg = data[ticker].short_mavg['price']
             long_mavg = data[ticker].long_mavg['price']

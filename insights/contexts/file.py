@@ -1,5 +1,5 @@
 #
-# Copyright 2013 Xavier Bruhiere
+# Copyright 2014 Xavier Bruhiere
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import intuition.data.utils as datautils
 import intuition.utils.dates as datesutils
 
 
-default_dir = '/'.join([os.environ['HOME'], '.intuition'])
+default_dir = '/'.join([os.environ.get('HOME', '/'), '.intuition'])
 
 
 def _load_context(storage):
@@ -31,7 +31,7 @@ def _load_context(storage):
         storage = '/'.join([default_dir, storage.split('/')[-1]])
     if storage.find('json') > 0:
         fmt_module = __import__('json')
-    elif storage.find('yaml') > 0:
+    elif (storage.find('yaml') > 0) or (storage.find('yml') > 0):
         fmt_module = __import__('yaml')
     else:
         raise NotImplementedError('unsupported file format: %s' % storage)

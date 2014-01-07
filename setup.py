@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2013 Xavier Bruhiere
+# Copyright 2014 Xavier Bruhiere
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,7 +13,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+
 import sys
+import os
+from glob import glob
 from setuptools import setup, find_packages
 
 from insights import __version__, __author__, __licence__
@@ -26,7 +30,9 @@ README_MARKDOWN = None
 def get_requirements():
     with open('./requirements.txt') as requirements:
         # Avoid github based requirements
-        return requirements.read().split('\n')
+        deps = requirements.read().split('\n')[-2]
+        deps.append('pandas>=0.13.0.dev')
+        return deps
 
 with open('README.md') as markdown_source:
     README_MARKDOWN = markdown_source.read()
@@ -71,5 +77,8 @@ setup(
         'Topic :: Office/Business :: Financial',
         'Topic :: Scientific/Engineering :: Information Analysis',
         'Topic :: System :: Distributed Computing',
-    ]
+    ],
+    data_files=[(os.path.expanduser('~/.intuition/R'), glob('./R/*'))],
+    dependency_links=[
+        'http://github.com/pydata/pandas/tarball/master#egg=pandas-0.13.0.dev']
 )

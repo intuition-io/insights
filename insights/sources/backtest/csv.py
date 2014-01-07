@@ -1,5 +1,5 @@
 #
-# Copyright 2013 Xavier Bruhiere
+# Copyright 2014 Xavier Bruhiere
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ log = logbook.Logger('intuition.source.backtest.csv')
 class CSVSource(DataFactory):
     """
     Loads a dataframe or a panel from given csv file(s)
-    Currently csv files must be located in $QTRADE/data
+    csv files must be located in ~/.intuition/data
     """
 
     def get_data(self):
@@ -36,7 +36,8 @@ class CSVSource(DataFactory):
         for sid in self.sids:
             if sid.rfind('csv') == -1:
                 sid += '.csv'
-            file_path = '/'.join((os.environ['QTRADE'], 'data', sid))
+            file_path = '/'.join(
+                [os.path.expanduser('~/.intuition'), 'data', sid])
             assert os.path.exists(file_path)
 
             df = pd.read_csv(file_path, index_col='Date', parse_dates=True)
