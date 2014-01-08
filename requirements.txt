@@ -3,10 +3,8 @@ numpy
 patsy
 redis
 rpy2
-scipy
 pymongo
 PyYAML
 requests
-statsmodels
 rethinkdb
 influxdb

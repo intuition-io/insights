@@ -20,16 +20,34 @@ middlewares for [Intuition](https://github.com/hackliff/intuition)
 Installation
 ------------
 
-```
+```console
 # apt-get install r-base
+# pip install intuition
 # pip install insights
+```
+
+Or if you plan to hack on it
+
+```console
+$ git clone https://github.com/hackliff/insights.git && cd insights
+# pip install -r requirements.txt
+$ export PYTHONPATH=$PYTHONPATH:$PWD
+```
+
+Now use in your *intuition* configuration something like
+
+```yaml
+modules:
+  manager: insights.managers.optimalfrontier.OptimalFrontier
+  algorithm: insights.algorithms.gradient.StochasticGradientDescent
+  data: insights.sources.live.EquitiesLiveSource
 ```
 
 
 Getting started
 ---------------
 
-Here is the Fair manager example, which allocates the same weight to all of your assets:
+* Here is the Fair manager example, which allocates the same weight to all of your assets:
 
 ```python
 from intuition.zipline.portfolio import PortfolioFactory
@@ -52,7 +70,7 @@ class Fair(PortfolioFactory):
         return allocations, expected_return, expected_risk
 ```
 
-A classic buy and hold strategy, with a plugin which stores metrics in
+* A classic buy and hold strategy, with a plugin which stores metrics in
 [rethinkdb](www.rethinkdb.com):
 
 ```python
