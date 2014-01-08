@@ -15,45 +15,47 @@
 # limitations under the License.
 
 
-import sys
 import os
+#import codecs
 from glob import glob
 from setuptools import setup, find_packages
 
 from insights import __version__, __author__, __licence__
 
 
-LONG_DESCRIPTION = None
-README_MARKDOWN = None
+#here = os.path.abspath(os.path.dirname(__file__))
+#readme = os.path.join(here, 'README.md')
 
 
-def get_requirements():
-    with open('./requirements.txt') as requirements:
-        # Avoid github based requirements
-        deps = requirements.read().split('\n')[:-1]
-        deps.pop(1)
-        deps.insert(1, 'pandas>=0.13.0.dev')
-        return deps
+#def get_requirements():
+    #with open('./requirements.txt') as requirements:
+        ## Avoid github based requirements
+        #deps = requirements.read().split('\n')[:-1]
+        #deps.pop(1)
+        #deps.insert(1, 'pandas>=0.13.0.dev')
+        #return deps
 
-with open('README.md') as markdown_source:
-    README_MARKDOWN = markdown_source.read()
 
-if 'upload' in sys.argv:
-    # Converts the README.md file to ReST, since PyPI uses ReST for formatting,
-    # This allows to have one canonical README file, being the README.md
-    # The conversion only needs to be done on upload.
-    # Otherwise, the pandoc import and errors that are thrown when
-    # pandoc are both overhead and a source of confusion for general
-    # usage/installation.
-    import pandoc
-    pandoc.core.PANDOC_PATH = '/usr/bin/pandoc'
-    doc = pandoc.Document()
-    doc.markdown = README_MARKDOWN
-    LONG_DESCRIPTION = doc.rst
-else:
-    # If pandoc isn't installed, e.g. when downloading from pip,
-    # just use the regular README.
-    LONG_DESCRIPTION = README_MARKDOWN
+requires = [
+    'numpy',
+    'pandas>=0.13.0.dev',
+    'patsy',
+    'redis',
+    'rpy2',
+    'pymongo',
+    'PyYAML',
+    'requests',
+    'rethinkdb',
+    'influxdb']
+
+
+def long_description():
+    try:
+        #with codecs.open(readme, encoding='utf8') as f:
+        with open('README.md') as f:
+            return f.read()
+    except IOError:
+        return "failed to read README.md"
 
 setup(
     name='insights',
@@ -63,9 +65,9 @@ setup(
     author=__author__,
     author_email='xavier.bruhiere@gmail.com',
     packages=find_packages(),
-    long_description=LONG_DESCRIPTION,
+    long_description=long_description(),
     license=__licence__,
-    install_requires=get_requirements(),
+    install_requires=requires,
     url="https://github.com/hackliff/insights",
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',

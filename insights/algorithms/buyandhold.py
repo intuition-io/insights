@@ -16,6 +16,7 @@
 
 from intuition.zipline.algorithm import TradingFactory
 import insights.plugins.database as database
+#import insights.plugins.messaging as msg
 #from insights.plugins.utils import debug_portfolio
 
 
@@ -25,6 +26,7 @@ class BuyAndHold(TradingFactory):
     Simpliest algorithm ever, just buy every stocks at the first frame
     '''
     def initialize(self, properties):
+        #self.use(msg.RedisProtocol().check)
         self.save = properties.get('save', False)
         if self.save:
             self.use(database.RethinkdbBackend(self.identity, True)

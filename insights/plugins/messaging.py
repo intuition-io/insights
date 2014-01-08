@@ -18,7 +18,7 @@ import redis
 import json
 
 
-class RedisMessaging():
+class RedisProtocol():
     '''
     Messaging skills for algorithms
     It uses redis to listen for incoming messages and publish informations
@@ -30,17 +30,21 @@ class RedisMessaging():
     channel = 'intuition'
 
     def __init__(self, host='localhost', port=6379):
+        #TODO store hashes {'intuition': {'id1': value, 'id2': value}}
         self.client = redis.StrictRedis(host=host, port=port, db=0)
 
-    def check(self):
+    def check(self, order, sids):
         ''' Check if a message is available '''
         payload = "{}"
         # Block self.timeout seconds on self.channel for a message
-        message = self.client.blpop(self.channel, timeout=self.timeout)
-        if message:
-            _, payload = message
+        raw_msg = self.client.blpop(self.channel, timeout=self.timeout)
+        if raw_msg:
+            _, payload = raw_msg
 
-        return json.loads(payload.replace("'", '"'), encoding='utf-8')
+            msg = json.loads(payload.replace("'", '"'), encoding='utf-8')
+            for sid in msg.keys():
+                print('ordering {} of {}'.format(msg[sid], sid))
+                order(sid, msg[sid])
 
     def emit(self, data):
         #NOTE Someway to control the correct execution ?

@@ -6,7 +6,7 @@ API
 
 ```python
 # This is work in progress
-# Arguments names must be TradingFactory attributes
+# Arguments names must be TradingFactory attributes or methods
 def debug_portfolio(portfolio, datetime):
     print datetime, portfolio
 ```
