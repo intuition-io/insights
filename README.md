@@ -4,6 +4,7 @@ Insights
 [![Build Status](https://travis-ci.org/hackliff/insights.png?branch=develop)](https://travis-ci.org/hackliff/insights)
 [![Coverage Status](https://coveralls.io/repos/hackliff/insights/badge.png)](https://coveralls.io/r/hackliff/insights)
 [![Code Health](https://landscape.io/github/hackliff/insights/develop/landscape.png)](https://landscape.io/github/hackliff/insights/develop)
+[![License](https://pypip.in/license/insights/badge.png)](https://pypi.python.org/pypi/insights/)
 
 > Plug-and-play building blocks for modern quants
 
