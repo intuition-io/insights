@@ -13,20 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logbook
+
+def debug_portfolio(logger, datetime, portfolio):
+    logger.debug('[{}] {}'.format(datetime, portfolio))
 
 
-log = logbook.Logger('intuition.plugins.utils')
-
-
-def debug_portfolio(portfolio):
-    print('\n' + 79 * '=')
-    log.debug(portfolio)
-    print(79 * '=' + '\n')
-
-
-def debug_metrics(perf_tracker):
+def debug_metrics(logger, datetime, perf_tracker):
     if perf_tracker.progress != 0.0:
-        print('\n' + 79 * '=')
-        log.debug(perf_tracker.cumulative_risk_metrics.to_dict())
-        print(79 * '=' + '\n')
+        logger.debug('[{}] {}'.format(
+            datetime, perf_tracker.cumulative_risk_metrics.to_dict()))

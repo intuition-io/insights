@@ -1,6 +1,6 @@
 # encoding: utf-8
 #
-# Copyright 2013 Xavier Bruhiere
+# Copyright 2014 Xavier Bruhiere
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,6 +22,9 @@ from zipline.transforms import batch_transform
 
 from intuition.zipline.algorithm import TradingFactory
 import insights.plugins.database as database
+import insights.plugins.messaging as messaging
+import insights.plugins.mobile as mobile
+#import insights.plugins.utils as utils
 
 
 # https://www.quantopian.com/posts/\
@@ -31,7 +34,13 @@ class StochasticGradientDescent(TradingFactory):
     '''
     '''
     def initialize(self, properties):
-        if properties.get('save', 0):
+        #self.use(utils.debug_portfolio)
+        if properties.get('interactive'):
+            self.use(messaging.RedisProtocol(self.identity).check)
+        device = properties.get('notify')
+        if device:
+            self.use(mobile.AndroidPush(device).notify)
+        if properties.get('save'):
             self.use(database.RethinkdbBackend(self.identity, True)
                      .save_portfolio)
 
@@ -46,7 +55,6 @@ class StochasticGradientDescent(TradingFactory):
             window_length=properties.get('window_length', 60))
 
     def event(self, data):
-        ''' ---------------------------------------------------    Init   --'''
         signals = {}
 
         for stock in data:
@@ -57,7 +65,6 @@ class StochasticGradientDescent(TradingFactory):
 
             theta, historicalPrices = thetaAndPrices
 
-            # Indicator is a new manager !
             indicator = np.dot(theta, historicalPrices)
             # normalize
             hlen = sum([k * k for k in historicalPrices])
@@ -67,22 +74,25 @@ class StochasticGradientDescent(TradingFactory):
 
             current_Prices = data[stock].price
             notional = self.portfolio.positions[stock].amount * current_Prices
+            transaction_price = indicator * self.capital_base * 10000
 
             if indicator >= 0 and notional < self.max_notional \
                     and self.day % self.rebalance_period == 0:
-                #TODO indicator should be used to pondrate
-                #     However it is much too small
-                signals[stock] = current_Prices
-                #self.order(stock, indicator * self.capital_base * 10000)
-                #self.logger.notice("[%s] %f shares of %s bought." % \
-                #(self.datetime, self.capital_base * indicator * 10000, stock))
+                if self.manager:
+                    signals[stock] = current_Prices
+                else:
+                    self.order(stock, transaction_price)
+                    self.logger.notice("[{}] {} shares of {} bought.".format(
+                        self.datetime, transaction_price, stock))
 
             if indicator < 0 and notional > self.min_notional \
                     and self.day % self.rebalance_period == 0:
-                signals[stock] = - current_Prices
-                #self.order(stock, indicator * self.capital_base * 10000)
-                #self.logger.notice("[%s] %f shares of %s sold." % \
-                #(self.datetime, self.capital_base * indicator * 10000, stock))
+                if self.manager:
+                    signals[stock] = - current_Prices
+                else:
+                    self.order(stock, transaction_price)
+                    self.logger.notice("[{}] {} shares of {} sold.".format(
+                        self.datetime, abs(transaction_price), stock))
 
         return signals
 
@@ -124,10 +134,7 @@ def hlsgdA(X, Y, l, nextIndex, numberOfIterations):
 
 # sign operations to identify mistakes
 def sign(k):
-    if k <= 0:
-        return 0
-    else:
-        return 1
+    return 0 if k <= 0 else 1
 
 
 def randomIndex(n):

@@ -18,6 +18,8 @@ from zipline.transforms import MovingAverage
 
 from intuition.zipline.algorithm import TradingFactory
 import insights.plugins.database as database
+import insights.plugins.mobile as mobile
+import insights.plugins.messaging as msg
 
 
 class DualMovingAverage(TradingFactory):
@@ -27,11 +29,16 @@ class DualMovingAverage(TradingFactory):
     again (indicating downwards momentum).
     '''
     def initialize(self, properties):
-        if properties.get('save', False):
+        if properties.get('interactive'):
+            self.use(msg.RedisProtocol(self.identity).check)
+        device = properties.get('notify')
+        if device:
+            self.use(mobile.AndroidPush(device).notify)
+        if properties.get('save'):
             self.use(database.RethinkdbBackend(self.identity, True)
                      .save_portfolio)
 
-        long_window = properties.get('long_window', 400)
+        long_window = properties.get('long_window', 30)
         short_window = properties.get('short_window', None)
         if short_window is None:
             short_window = int(round(
@@ -51,20 +58,22 @@ class DualMovingAverage(TradingFactory):
         self.long_mavgs = []
 
     def warming(self, data):
-        for t in data:
-            self.invested[t] = False
+        for sid in data:
+            self.invested[sid] = False
 
     def event(self, data):
         signals = {}
-        self.logger.debug('Processing event {}'.format(self.datetime))
 
         for ticker in data:
+
             short_mavg = data[ticker].short_mavg['price']
             long_mavg = data[ticker].long_mavg['price']
+
             if short_mavg - long_mavg > self.threshold \
                     and not self.invested[ticker]:
                 signals[ticker] = data[ticker].price
                 self.invested[ticker] = True
+
             elif short_mavg - long_mavg < -self.threshold \
                     and self.invested[ticker]:
                 signals[ticker] = - data[ticker].price

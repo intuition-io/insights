@@ -14,7 +14,8 @@
 # limitations under the License.
 
 
-import pymongo
+# Can't make python-etcd to work currently
+import requests
 import datetime
 import pytz
 
@@ -22,24 +23,27 @@ import intuition.data.utils as datautils
 import intuition.utils.dates as datesutils
 
 
-database = 'intuition'
-collection = 'contexts'
-
-
 # Super interface: http://genghisapp.com/
 def _load_context(storage):
+    context = {}
     tmp = storage.split('/')
-    uri = tmp[0]
-    conf_id = tmp[1]
-    client = pymongo.MongoClient("mongodb://{}/".format(uri))
-    assert (database in client.database_names())
-    db = client[database]
-    print 'connected to {} database'.format(db.name)
-    assert (collection in db.collection_names())
-    conf_doc = db[collection]
-    print 'got {} document'.format(conf_doc.name)
+    url = 'http://{}/v2/keys/{}'.format(tmp[0], tmp[1])
+    res = requests.get(url, params={'recursive': 'true', 'sorted': 'true'})
+    if res.ok:
+        data = res.json()['node']['nodes']
+        #TODO Generic, recursive function
+        #context = _walk_nodes(data)
+        for node in data:
+            key = node['key'].split('/')[-1]
+            if 'dir' in node:
+                context[key] = {}
+                for subnode in node['nodes']:
+                    subkey = subnode['key'].split('/')[-1]
+                    context[key][subkey] = subnode['value']
+            else:
+                context[key] = node['value']
 
-    return conf_doc.find_one({'id': conf_id})
+    return context
 
 
 def _normalize_context(context):
@@ -59,7 +63,22 @@ def _normalize_context(context):
         context = {}
 
 
+def _normalize_strategy(strategy):
+    ''' etcd only retrieves strings, giving back right type '''
+    for k, v in strategy.iteritems():
+        if v == 'true':
+            strategy[k] = True
+        elif v == 'false':
+            strategy[k] = False
+        else:
+            try:
+                strategy[k] = float(v)
+            except ValueError:
+                pass
+
+
 def build_context(storage):
+    # Storage like {{ etcd_ip }}:{{ etcd_port }}/{{ conf_id }}
     try:
         context = _load_context(storage)
     except Exception as e:
@@ -72,4 +91,9 @@ def build_context(storage):
 
     if context:
         _normalize_context(context)
+    if algorithm:
+        _normalize_strategy(algorithm)
+    if manager:
+        _normalize_strategy(manager)
+
     return context, {'algorithm': algorithm, 'manager': manager}

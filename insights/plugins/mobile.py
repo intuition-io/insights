@@ -16,6 +16,7 @@
 
 import requests
 import os
+import time
 
 
 def push_to_android(api_key, device_id, payload, push_type):
@@ -33,21 +34,25 @@ class AndroidPush():
     https://www.pushbullet.com/api
     '''
 
-    api_url = 'https://api.pushbullet.com/api/'
+    _api_url = 'https://api.pushbullet.com/api/'
     device = None
+    _count = 0
+    _rate_limit = 10
+    _min_interval = 30
+    _last_time = -30
 
     def __init__(self, device_name):
         try:
-            self.api_key = os.environ['PUSHBULLET_API_KEY']
+            self._api_key = os.environ['PUSHBULLET_API_KEY']
         except KeyError:
-            self.api_key = ''
+            self._api_key = ''
         self.device = self._device_lookup(device_name)
 
     def _device_lookup(self, device_name):
         ''' Request informations about <name> device '''
         device_found = {}
-        response = requests.get(self.api_url + 'devices',
-                                auth=(self.api_key, ''))
+        response = requests.get(self._api_url + 'devices',
+                                auth=(self._api_key, ''))
         if response.ok:
             for device in response.json()['devices']:
                 if device_name == device['extras']['model']:
@@ -74,7 +79,45 @@ class AndroidPush():
     def push(self, payload, push_type=None):
         if push_type is None:
             push_type = self._detect_push_type(payload)
-        return push_to_android(self.api_key,
+        return push_to_android(self._api_key,
                                self.device['id'],
                                payload,
                                push_type)
+
+    def _watchdog(self):
+        ''' Notifications are stopped if
+          * The last one was too close
+          * We reach a rated limit '''
+        #is_ok = True
+        too_early = (time.time() - self._last_time < self._min_interval)
+        #if time.time() - self._last_time < self._min_interval:
+            #is_ok = False
+        too_much = (self._count >= self._rate_limit)
+        #if self._count >= self._rate_limit:
+            #is_ok = False
+        #return is_ok
+        return (False if (too_early or too_much) else True)
+
+    def notify(self, orderbook):
+        if orderbook and self._watchdog():
+            # Alert user of the orders about to be processed
+            # Ok... kind of fancy method
+            ords = {'-1': 'You should sell', '1': 'You should buy'}
+            items = ['{} {} stocks of {}'.format(
+                ords[str(amount / abs(amount))], amount, ticker)
+                for ticker, amount in orderbook.iteritems()
+                if amount != 0]
+            payload = {
+                'title': 'Portfolio manager notification',
+                'items': items,
+            }
+            req = self.push(payload)
+            if req.ok:
+                data = req.json()
+                print('successfully notified with id {}:{} at {}'
+                      .format(data['receiver_id'],
+                              data['id'],
+                              data['created']))
+                req.close()
+            self._count += 1
+            self._last_time = time.time()

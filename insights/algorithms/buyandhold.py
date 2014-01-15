@@ -16,29 +16,30 @@
 
 from intuition.zipline.algorithm import TradingFactory
 import insights.plugins.database as database
-#import insights.plugins.messaging as msg
-#from insights.plugins.utils import debug_portfolio
+import insights.plugins.mobile as mobile
+import insights.plugins.messaging as msg
 
 
-#TODO Should handle in parameter all of the set_*
 class BuyAndHold(TradingFactory):
     '''
     Simpliest algorithm ever, just buy every stocks at the first frame
     '''
     def initialize(self, properties):
-        #self.use(msg.RedisProtocol().check)
-        self.save = properties.get('save', False)
-        if self.save:
+        if properties.get('interactive'):
+            self.use(msg.RedisProtocol(self.identity).check)
+        device = properties.get('notify')
+        if device:
+            self.use(mobile.AndroidPush(device).notify)
+        if properties.get('save'):
             self.use(database.RethinkdbBackend(self.identity, True)
                      .save_portfolio)
 
     def event(self, data):
         signals = {}
 
+        # Only cares about buying everything at the beginning
         if self.day == 2:
-            ''' -----------------------------------------------    Scan   --'''
             for ticker in data:
                 signals[ticker] = data[ticker].price
 
-        ''' ---------------------------------------------------   Orders  --'''
         return signals
