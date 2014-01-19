@@ -1,5 +1,5 @@
 #
-# Copyright 2013 Quantopian, Inc.
+# Copyright 2014 Xavier Bruhiere
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,12 +14,8 @@
 # limitations under the License.
 
 
-import logbook
 from intuition.zipline.data_source import DataFactory
 from intuition.data.quandl import DataQuandl
-
-
-log = logbook.Logger('intuition.source.backtest.quandl')
 
 
 class QuandlSource(DataFactory):
@@ -31,7 +27,6 @@ class QuandlSource(DataFactory):
         # API key must be provided here or store in the environment
         # (QUANDL_API_KEY)
         feed = DataQuandl()
-        #assert len(self.sids) == 1
 
         data = feed.fetch(self.sids,
                           start_date=self.start,

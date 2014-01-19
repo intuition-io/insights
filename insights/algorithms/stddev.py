@@ -1,41 +1,31 @@
-#
-# Copyright 2014 Xavier Bruhiere
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-
 from zipline.transforms import MovingVWAP, MovingStandardDev
+import zipline.finance.commission as commission
 
 from intuition.zipline.algorithm import TradingFactory
 import insights.plugins.database as database
+import insights.plugins.mobile as mobile
+import insights.plugins.messaging as msg
 
 
-#TODO The portfolio management is included here, make it a stand alone manager
+#TODO Now zipline offers orders methods with limit and stop loss
 class StddevBased(TradingFactory):
+
     def initialize(self, properties):
-        if properties.get('save', 0):
+        if properties.get('save'):
             self.use(database.RethinkdbBackend(self.identity, True)
                      .save_portfolio)
+        device = properties.get('notify')
+        if device:
+            self.use(mobile.AndroidPush(device).notify)
+        if properties.get('interactive'):
+            self.use(msg.RedisProtocol(self.identity).check)
 
         # Variable to hold opening price of long trades
         self.long_open_price = 0
-
         # Variable to hold stoploss price of long trades
         self.long_stoploss = 0
-
         # Variable to hold takeprofit price of long trades
         self.long_takeprofit = 0
-
         # Allow only 1 long position to be open at a time
         self.long_open = False
 
@@ -51,6 +41,7 @@ class StddevBased(TradingFactory):
         # starting capital, trading ability will be turned off... tut tut tut
         # :shakes head dissapprovingly:)
         self.plug_pulled = False
+        self.plug_trigger = properties.get('plug', 0.7)
 
         self.add_transform(MovingStandardDev,
                            'stddev',
@@ -59,60 +50,50 @@ class StddevBased(TradingFactory):
                            'vwap',
                            window_length=properties.get('vwap_window', 5))
 
+        self.set_commission(commission.PerTrade(
+            cost=properties.get('commission', 2.5)))
+
     def event(self, data):
-        signals = {}
+        signals = {'buy': {}, 'sell': {}}
 
         # Reporting Variables
-        profit = 0
         total_trades = self.successes + self.fails
         winning_percentage = self.successes / total_trades * 100
 
         # Data Variables
-        for stock in data.keys():
+        for stock in data:
             price = data[stock].price
             vwap_5_day = data[stock].vwap
-            equity = self.portfolio.cash + self.portfolio.positions_value
             standard_deviation = data[stock].stddev
+            equity = self.portfolio.cash + self.portfolio.positions_value
             if not standard_deviation:
                 continue
-
-            # - Set order size
-            # - (Set here as "starting_cash/1000" - which coupled with the
-            # below "and price < 1000" - is a scalable way of setting
-            # (initially :P)
-            # affordable order quantities (for most stocks).
-            # Very very low for forex
-            order_amount = self.portfolio.starting_cash / 1000
 
             # Open Long Position if current price is larger than the 9 day
             # volume weighted average plus 60% of the standard deviation
             # (meaning the price has broken it's range to the up-side by 10%
             # more than the range value)
             if price > vwap_5_day + (standard_deviation * 0.6) \
-                    and self.long_open is False and price < 1000:
-                signals[stock] = price
+                    and self.long_open is False:
+                signals['buy'][stock] = data[stock]
                 self.long_open = True
                 self.long_open_price = price
                 self.long_stoploss = (
                     self.long_open_price - standard_deviation * 0.6)
                 self.long_takeprofit = (
                     self.long_open_price + standard_deviation * 0.5)
-                self.logger.info('{}: Long Position Ordered'
-                                 .format(self.datetime))
 
             # Close Long Position if takeprofit value hit
-
             # Note that less volatile stocks can end up hitting takeprofit at a
             # small loss
             if price >= self.long_takeprofit and self.long_open is True:
-                signals[stock] = -price
+                signals['sell'][stock] = data[stock]
                 self.long_open = False
                 self.long_takeprofit = 0
-                profit = ((price * order_amount) -
-                          (self.long_open_price * order_amount))
                 self.successes = self.successes + 1
-                self.logger.info('Long Position Closed by Takeprofit at ${}\
-                    profit'.format(profit))
+
+                self.logger.info('{} Long Position Closed by Takeprofit at ${}'
+                                 .format(stock, price))
                 self.logger.info('Total Equity now at ${}'.format(equity))
                 self.logger.info('So far you have had {} successful trades and\
                     {} failed trades'.format(self.successes, self.fails))
@@ -121,14 +102,12 @@ class StddevBased(TradingFactory):
 
             # Close Long Position if stoploss value hit
             if price <= self.long_stoploss and self.long_open is True:
-                signals[stock] = -price
+                signals['sell'][stock] = data[stock]
                 self.long_open = False
                 self.long_stoploss = 0
-                profit = ((price * order_amount) -
-                          (self.long_open_price * order_amount))
                 self.fails = self.fails + 1
-                self.logger.info('Long Position Closed by Stoploss at ${}\
-                  profit'.format(profit))
+                self.logger.info('{} long Position Closed by Stoploss at ${}'
+                                 .format(stock, price))
                 self.logger.info('Total Equity now at ${}'.format(equity))
                 self.logger.info('So far you have had {} successful trades and\
                   {} failed trades'.format(self.successes, self.fails))
@@ -136,13 +115,12 @@ class StddevBased(TradingFactory):
                   {} percent'.format(winning_percentage))
 
             # Pull Plug?
-            if equity < self.portfolio.starting_cash * 0.7:
+            if equity < self.portfolio.starting_cash * self.plug_trigger:
                 self.plug_pulled = True
                 self.logger.info("Ouch! We've pulled the plug...")
 
             if self.plug_pulled is True and self.long_open is True:
-                signals[stock] = -price
-                #self.order(stock, -order_amount)
+                signals['sell'][stock] = data[stock]
                 self.long_open = False
                 self.long_stoploss = 0
 

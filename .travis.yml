@@ -6,8 +6,8 @@ before_install:
   - sudo apt-get -y install python-pip python-dev g++ make libfreetype6-dev libpng-dev libopenblas-dev liblapack-dev gfortran r-base
 install:
   - pip install --quiet --use-mirrors numpy nose flake8 coveralls
-  - pip install --quiet -e git+https://github.com/hackliff/intuition.git@develop#egg=intuition
-  - pip install --quiet --use-mirrors -r requirements.txt
+  - pip install -e git+https://github.com/hackliff/intuition.git@develop#egg=intuition
+  - pip install --use-mirrors -r requirements.txt
 
 before_script:
   - flake8 insights tests

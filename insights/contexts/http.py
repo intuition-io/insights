@@ -14,7 +14,8 @@
 # limitations under the License.
 
 
-import pymongo
+# Can't make python-etcd to work currently
+import etcd
 import datetime
 import pytz
 
@@ -22,24 +23,24 @@ import intuition.data.utils as datautils
 import intuition.utils.dates as datesutils
 
 
-database = 'intuition'
-collection = 'contexts'
-
-
-# Super interface: http://genghisapp.com/
 def _load_context(storage):
+    # storage = {{etcd_ip }}:{{ etcd_port }}/{{ conf_id }}
+    context = {}
     tmp = storage.split('/')
-    uri = tmp[0]
+    etcd_ip = tmp[0].split(':')[0]
+    etcd_port = int(tmp[0].split(':')[1])
     conf_id = tmp[1]
-    client = pymongo.MongoClient("mongodb://{}/".format(uri))
-    assert (database in client.database_names())
-    db = client[database]
-    print 'connected to {} database'.format(db.name)
-    assert (collection in db.collection_names())
-    conf_doc = db[collection]
-    print 'got {} document'.format(conf_doc.name)
-    context = conf_doc.find_one({'id': conf_id})
-    assert context
+    client = etcd.Client(host=etcd_ip, port=etcd_port)
+
+    #TODO A beautiful recursive function
+    for item in client.get('/' + conf_id):
+        key_1 = item.key.split('/')[-1]
+        if item.dir:
+            context[key_1] = {}
+            for subitem in client.get(item.key):
+                context[key_1][subitem.key.split('/')[-1]] = subitem.value
+        else:
+            context[key_1] = item.value
 
     return context
 
@@ -61,7 +62,22 @@ def _normalize_context(context):
         context = {}
 
 
+def _normalize_strategy(strategy):
+    ''' etcd only retrieves strings, giving back right type '''
+    for k, v in strategy.iteritems():
+        if v == 'true':
+            strategy[k] = True
+        elif v == 'false':
+            strategy[k] = False
+        else:
+            try:
+                strategy[k] = float(v)
+            except ValueError:
+                pass
+
+
 def build_context(storage):
+    # Storage like {{ etcd_ip }}:{{ etcd_port }}/{{ conf_id }}
     try:
         context = _load_context(storage)
     except Exception as e:
@@ -74,4 +90,9 @@ def build_context(storage):
 
     if context:
         _normalize_context(context)
+    if algorithm:
+        _normalize_strategy(algorithm)
+    if manager:
+        _normalize_strategy(manager)
+
     return context, {'algorithm': algorithm, 'manager': manager}

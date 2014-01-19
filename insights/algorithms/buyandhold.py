@@ -14,31 +14,48 @@
 # limitations under the License.
 
 
+import zipline.finance.commission as commission
+
 from intuition.zipline.algorithm import TradingFactory
 import insights.plugins.database as database
-#import insights.plugins.messaging as msg
-#from insights.plugins.utils import debug_portfolio
+import insights.plugins.mobile as mobile
+import insights.plugins.messaging as msg
 
 
-#TODO Should handle in parameter all of the set_*
 class BuyAndHold(TradingFactory):
     '''
-    Simpliest algorithm ever, just buy every stocks at the first frame
+    Buy every sids on the given day, regularly or always (start_day = -1), and
+    until the end
     '''
     def initialize(self, properties):
-        #self.use(msg.RedisProtocol().check)
-        self.save = properties.get('save', False)
-        if self.save:
+        # Punctual buy signals, with -1 for always, 0 never
+        self.start_day = properties.get('start_day', 2)
+        # regularly buy signals
+        self.rate = properties.get('rate', -1)
+
+        if properties.get('interactive'):
+            self.use(msg.RedisProtocol(self.identity).check)
+        device = properties.get('notify')
+        if device:
+            self.use(mobile.AndroidPush(device).notify)
+        if properties.get('save'):
             self.use(database.RethinkdbBackend(self.identity, True)
                      .save_portfolio)
 
+        self.set_commission(commission.PerTrade(
+            cost=properties.get('commission', 2.5)))
+
+    def _check_rate(self):
+        return (self.rate > 0) and (self.days % self.rate == 0)
+
     def event(self, data):
-        signals = {}
+        signals = {'buy': {}, 'sell': {}}
 
-        if self.day == 2:
-            ''' -----------------------------------------------    Scan   --'''
-            for ticker in data:
-                signals[ticker] = data[ticker].price
+        # One shot or always buying or regularly
+        if self.days == self.start_day \
+                or self.start_day < 0 \
+                or self._check_rate():
+            # Only cares about buying everything
+            signals['buy'] = data
 
-        ''' ---------------------------------------------------   Orders  --'''
         return signals

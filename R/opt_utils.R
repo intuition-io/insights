@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Xavier Bruhiere
+# Copyright 2014 Xavier Bruhiere
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ suppressPackageStartupMessages(require(fImport))
 suppressPackageStartupMessages(require(PerformanceAnalytics))
 suppressPackageStartupMessages(require(tseries))
 suppressPackageStartupMessages(require(stats))
-suppressPackageStartupMessages(require(RMySQL))
 suppressPackageStartupMessages(require(zoo))
 suppressPackageStartupMessages(require(futile.logger))
 suppressPackageStartupMessages(require(RJSONIO))
