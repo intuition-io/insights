@@ -1,5 +1,5 @@
 #
-# Copyright 2013 Xavier Bruhiere
+# Copyright 2014 Xavier Bruhiere
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 
 
 # Can't make python-etcd to work currently
-import requests
+import etcd
 import datetime
 import pytz
 
@@ -23,25 +23,24 @@ import intuition.data.utils as datautils
 import intuition.utils.dates as datesutils
 
 
-# Super interface: http://genghisapp.com/
 def _load_context(storage):
+    # storage = {{etcd_ip }}:{{ etcd_port }}/{{ conf_id }}
     context = {}
     tmp = storage.split('/')
-    url = 'http://{}/v2/keys/{}'.format(tmp[0], tmp[1])
-    res = requests.get(url, params={'recursive': 'true', 'sorted': 'true'})
-    if res.ok:
-        data = res.json()['node']['nodes']
-        #TODO Generic, recursive function
-        #context = _walk_nodes(data)
-        for node in data:
-            key = node['key'].split('/')[-1]
-            if 'dir' in node:
-                context[key] = {}
-                for subnode in node['nodes']:
-                    subkey = subnode['key'].split('/')[-1]
-                    context[key][subkey] = subnode['value']
-            else:
-                context[key] = node['value']
+    etcd_ip = tmp[0].split(':')[0]
+    etcd_port = int(tmp[0].split(':')[1])
+    conf_id = tmp[1]
+    client = etcd.Client(host=etcd_ip, port=etcd_port)
+
+    #TODO A beautiful recursive function
+    for item in client.get('/' + conf_id):
+        key_1 = item.key.split('/')[-1]
+        if item.dir:
+            context[key_1] = {}
+            for subitem in client.get(item.key):
+                context[key_1][subitem.key.split('/')[-1]] = subitem.value
+        else:
+            context[key_1] = item.value
 
     return context
 

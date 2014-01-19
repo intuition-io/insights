@@ -102,9 +102,10 @@ class AndroidPush():
         if orderbook and self._watchdog():
             # Alert user of the orders about to be processed
             # Ok... kind of fancy method
-            ords = {'-1': 'You should sell', '1': 'You should buy'}
+            #ords = {'-1': 'You should sell', '1': 'You should buy'}
             items = ['{} {} stocks of {}'.format(
-                ords[str(amount / abs(amount))], amount, ticker)
+                #ords[str(amount / abs(amount))], amount, ticker)
+                ['buy', 'sell'][amount < 0], amount, ticker)
                 for ticker, amount in orderbook.iteritems()
                 if amount != 0]
             payload = {

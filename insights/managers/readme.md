@@ -11,22 +11,20 @@ from portfolio import PortfolioFactory
 class MyManager(PortfolioFactory):
     '''
     Manages portfolio during simulation, and stays aware of the situation
-    through the update() method. It is configured through zmq message (manager
-    field) or ~/.intuition/plugins.json file.
+    through the update() method.
 
     User strategies call it with a dictionnnary of detected opportunities (i.e.
     buy or sell signals).  Then the optimize function computes assets
     allocation, returning a dictionnary of symbols with their weigths or amount
     to reallocate.
-                                  __________________________      _____________
-    signals {'google': 745.5} --> |                         | -> |            |
+
+    {'buy': zipline.Positions}    __________________________      _____________
+    signals                   --> |                         | -> |            |
                                   | trade_signals_handler() |    | optimize() |
     orders  {'google': 34}    <-- |_________________________| <- |____________|
 
-    In addition, portfolio objects can be saved in database and reloaded later,
-    and user on-the-fly orders are catched and executed in remote mode. Finally
-    portfolios are connected to the server broker and, if requested, send state
-    messages to client.
+    This is abstract class, inheretid class will eventally overwrite optmize()
+    to expose their own asset allocation strategy.
     '''
     def initialize(configuration):
         '''
@@ -68,3 +66,47 @@ class MyManager(PortfolioFactory):
 
 Library
 -------
+
+Here is a list of the portfolio managers currently implemented, with a short
+description and the parameters exposed (values are defaults)
+
+* Global Minimum Variance
+> Computes from data history a suitable compromise between risks and returns.
+```python
+parameters = {window: 40, only_full: True}
+```
+
+* OLMAR
+> On-Line Portfolio Moving Average Reversion
+```python
+parameters = {eps: 1}
+```
+
+* Constant
+> Buys and sells a constant defined amount
+```python
+parameters = {buy_amount: 100, sell_amount: 100, scale: {GOOG: 2, AAPL: 0.1}}
+```
+
+* Fair
+> Dispatch equals weigths for buy signals and give up everything on sell ones
+```python
+parameters = {}
+```
+
+* Optimal Frontier
+> Computes with R the efficient frontier and pick up the optimize point on it
+```python
+parameters = {per_sell: 1.0, max_weigths: 0.2, window: 50, refresh: 1, only_full: True}
+```
+
+* Black Litterman (work in progress)
+> This algorithm performs a Black-Litterman portfolio construction. The
+> framework is built on the classical mean-variance approach, but allows the
+> investor to specify views about the over- or under- performance of various
+> assets.  Uses ideas from the Global Minimum Variance Portfolio algorithm
+> posted on Quantopian. Ideas also adopted from
+> www.quantandfinancial.com/2013/08/portfolio-optimization-ii-black.html.
+```python
+parameters = {window: 255, refresh: 10, only_full: True}
+```

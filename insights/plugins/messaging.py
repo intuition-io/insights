@@ -19,9 +19,9 @@ import json
 import os
 
 
-MSG_CONFIG = {
-    'host': os.getenv('MSG_HOST', 'localhost'),
-    'port': int(os.getenv('MSG_PORT', 6379)),
+BROKER_CONFIG = {
+    'host': os.getenv('BROKER_HOST', 'localhost'),
+    'port': int(os.getenv('BROKER_PORT', 6379)),
 }
 
 
@@ -40,7 +40,7 @@ class RedisProtocol():
     def __init__(self, channel='intuition'):
         self.channel = channel
         self.client = redis.StrictRedis(
-            host=MSG_CONFIG['host'], port=MSG_CONFIG['port'], db=0)
+            host=BROKER_CONFIG['host'], port=BROKER_CONFIG['port'], db=0)
 
     def check(self, order, sids):
         ''' Check if a message is available '''

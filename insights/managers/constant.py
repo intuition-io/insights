@@ -39,7 +39,7 @@ class Constant(PortfolioFactory):
                 if s in parameters['scale']:
                     quantity *= parameters['scale'][s]
             # Allocate defined amount to buy
-            allocations[s] = quantity
+            allocations[s] = int(quantity)
 
         for s in to_sell:
             quantity = parameters.get(
@@ -48,7 +48,7 @@ class Constant(PortfolioFactory):
                 if s in parameters['scale']:
                     quantity *= parameters['scale'][s]
             # Allocate defined amount to buy
-            allocations[s] = - quantity
+            allocations[s] = -int(quantity)
 
         # Defaults values
         e_ret = 0

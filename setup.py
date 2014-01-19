@@ -23,21 +23,9 @@ from setuptools import setup, find_packages
 from insights import __version__, __author__, __licence__
 
 
-#here = os.path.abspath(os.path.dirname(__file__))
-#readme = os.path.join(here, 'README.md')
-
-
-#def get_requirements():
-    #with open('./requirements.txt') as requirements:
-        ## Avoid github based requirements
-        #deps = requirements.read().split('\n')[:-1]
-        #deps.pop(1)
-        #deps.insert(1, 'pandas>=0.13.0.dev')
-        #return deps
-
-
 requires = [
     'numpy',
+    'python-etcd',
     'pandas>=0.13.0.dev',
     'patsy',
     'redis',

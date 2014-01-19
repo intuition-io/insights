@@ -1,24 +1,9 @@
 # encoding: utf-8
-#
-# Copyright 2014 Xavier Bruhiere
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-
 import random
 import numpy as np
 
 from zipline.transforms import batch_transform
+import zipline.finance.commission as commission
 
 from intuition.zipline.algorithm import TradingFactory
 import insights.plugins.database as database
@@ -32,6 +17,10 @@ import insights.plugins.mobile as mobile
 # method-using-hinge-loss-function
 class StochasticGradientDescent(TradingFactory):
     '''
+    Randomly chooses training data, gradually decrease the learning rate, and
+    penalize data points which deviate significantly from what's predicted.
+    Here I used an average SGD method that is tested to outperform if I simply
+    pick the last predictor value trained after certain iterations.
     '''
     def initialize(self, properties):
         #self.use(utils.debug_portfolio)
@@ -51,18 +40,21 @@ class StochasticGradientDescent(TradingFactory):
         self.min_notional = -self.capital_base
         self.gradient_iterations = properties.get('gradient_iterations', 5)
         self.calculate_theta = calculate_theta(
-            refresh_period=properties.get('refresh_period', 1),
-            window_length=properties.get('window_length', 60))
+            refresh_period=properties.get('refresh', 1),
+            window_length=properties.get('window', 60))
+
+        self.set_commission(commission.PerTrade(
+            cost=properties.get('commission', 2.5)))
 
     def event(self, data):
-        signals = {}
+        signals = {'buy': {}, 'sell': {}}
+        scale = {}
 
         for stock in data:
             thetaAndPrices = self.calculate_theta.handle_data(
                 data, stock, self.gradient_iterations)
             if thetaAndPrices is None:
                 continue
-
             theta, historicalPrices = thetaAndPrices
 
             indicator = np.dot(theta, historicalPrices)
@@ -77,23 +69,26 @@ class StochasticGradientDescent(TradingFactory):
             transaction_price = indicator * self.capital_base * 10000
 
             if indicator >= 0 and notional < self.max_notional \
-                    and self.day % self.rebalance_period == 0:
+                    and self.days % self.rebalance_period == 0:
                 if self.manager:
-                    signals[stock] = current_Prices
+                    scale[stock] = abs(indicator * self.capital_base)
+                    signals['buy'][stock] = data[stock]
                 else:
                     self.order(stock, transaction_price)
                     self.logger.notice("[{}] {} shares of {} bought.".format(
                         self.datetime, transaction_price, stock))
 
             if indicator < 0 and notional > self.min_notional \
-                    and self.day % self.rebalance_period == 0:
+                    and self.days % self.rebalance_period == 0:
                 if self.manager:
-                    signals[stock] = - current_Prices
+                    scale[stock] = abs(indicator * self.capital_base)
+                    signals['sell'][stock] = data[stock]
                 else:
                     self.order(stock, transaction_price)
                     self.logger.notice("[{}] {} shares of {} sold.".format(
                         self.datetime, abs(transaction_price), stock))
 
+        self.manager.advise(scale=scale)
         return signals
 
 

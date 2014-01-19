@@ -1,6 +1,7 @@
 numpy
 -e git+https://github.com/pydata/pandas.git@master#egg=pandas-0.13.0-27-gf7aeaeb
 patsy
+python-etcd
 redis
 rpy2
 pymongo
