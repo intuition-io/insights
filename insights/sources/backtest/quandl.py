@@ -14,12 +14,8 @@
 # limitations under the License.
 
 
-import logbook
 from intuition.zipline.data_source import DataFactory
 from intuition.data.quandl import DataQuandl
-
-
-log = logbook.Logger('intuition.source.backtest.quandl')
 
 
 class QuandlSource(DataFactory):

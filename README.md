@@ -11,15 +11,10 @@ Insights
 > Plug-and-play building blocks for modern quants
 
 Quantitative algorithms, portfolio managers data sources, contexts and
-middlewares for [Intuition][3]
+middlewares for [Intuition][3]. Once provided to the configuration, those
+modules, or the ones you create, are automatically used.
 
-[Public development board][1]
-
-* [Algorithm API](https://github.com/hackliff/insights/blob/master/insights/algorithms/readme.md)
-* [Portfolio API](https://github.com/hackliff/insights/blob/master/insights/managers/readme.md)
-* [Data API](https://github.com/hackliff/insights/blob/master/insights/sources/readme.md)
-* [Contexts](https://github.com/hackliff/insights/blob/master/insights/contexts/readme.md)
-* [Middlewares](https://github.com/hackliff/insights/blob/master/insights/contexts/readme.md)
+[Development Board][1]
 
 
 Installation
@@ -36,7 +31,7 @@ $ wget -qO- http://bit.ly/1anxGhf | sudo FULL_INTUITION=true bash
 ```console
 $ sudo apt-get install r-base
 $ # Install R libraries
-$ wget -qO- http://bit.ly/L39jeY | bash
+$ wget -qO- http://bit.ly/L39jeY | R --no-save
 $ (sudo) pip install intuition
 
 $ (sudo) pip install insights
@@ -72,12 +67,21 @@ Check out readmes and source codes to learn what is available and the
 parameters exposed. Documentation is on its way !
 
 
-Don't take my word, hack it
----------------------------
+Code your own modules
+---------------------
 
-Examples are cool, let's start with that. To make your modules available, just
-feed the *intuition* configuration (like above) a path it can find in the
+* [Algorithm API](https://github.com/hackliff/insights/blob/master/insights/algorithms/readme.md)
+* [Portfolio API](https://github.com/hackliff/insights/blob/master/insights/managers/readme.md)
+* [Data API](https://github.com/hackliff/insights/blob/master/insights/sources/readme.md)
+* [Contexts](https://github.com/hackliff/insights/blob/master/insights/contexts/readme.md)
+* [Middlewares](https://github.com/hackliff/insights/blob/master/insights/contexts/readme.md)
+
+Here are some examples to get you started. To make your work available, just
+feed the [Intuition][3] configuration (like above) a path it can find in the
 environment variable `$PYTHONPATH`.
+
+Everything is done to make writing modules easy, fun and efficient. So your
+feedback, advices and contributions are happily welcome
 
 * First, a classic buy and hold strategy, with a plugin which stores metrics in
 [rethinkdb](www.rethinkdb.com):
@@ -117,7 +121,8 @@ class Fair(PortfolioFactory):
     Dispatch equals weigths for buy signals and give up everything on sell ones
     '''
     def optimize(self, date, to_buy, to_sell, parameters):
-        # The algorithm fills 'to_buy' and 'to_sell' dicts by detecting buy and sell signals
+        # The algorithm fills 'to_buy' and 'to_sell' dicts by detecting
+        # buy and sell signals
         # This dictionnary holds portfolio manager recommendations
         allocations = {}
 
@@ -164,12 +169,6 @@ class QuandlSource(DataFactory):
             'high': (int, 'High'),
         }
 ```
-
-Notice
-------
-
-Everything is done in [Intuition][3] to make writing modules easy, fun and
-efficient. So your feedback, advices and contributions are happily welcome
 
 [1]: https://trello.com/b/WvJDlynt/intuition
 [2]: http://www.quandl.com/

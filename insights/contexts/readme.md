@@ -52,7 +52,7 @@ with an additional *id* information. Then you can use it with
 ``--context mongodb::{{ ip }}:{{ port }}/{{ doc_id }}``
 
 
-### Etcd
+### HTTP
 
 The configuration is stored with [etcd][3] at v2/keys/{{ conf_id }}.
 
@@ -62,8 +62,8 @@ To set a key / value :
 
 ```console
 $ URL=http://{{ ip }}:{{ port }}/v2/keys/{{ conf_id }}
-$ curl -L $URL/universe -XPUT -d value="nasdaq,5"
-$ curl -L $URL/{{ conf_id }}/algorithm/save -XPUT -d value="true"
+$ curl -L -XPUT $URL/universe -d value="nasdaq,5"
+$ curl -L -XPUT $URL/{{ conf_id }}/algorithm/save -d value="true"
 ```
 
 

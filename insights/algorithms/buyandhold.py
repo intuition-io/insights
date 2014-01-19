@@ -14,6 +14,8 @@
 # limitations under the License.
 
 
+import zipline.finance.commission as commission
+
 from intuition.zipline.algorithm import TradingFactory
 import insights.plugins.database as database
 import insights.plugins.mobile as mobile
@@ -22,9 +24,15 @@ import insights.plugins.messaging as msg
 
 class BuyAndHold(TradingFactory):
     '''
-    Simpliest algorithm ever, just buy every stocks at the first frame
+    Buy every sids on the given day, regularly or always (start_day = -1), and
+    until the end
     '''
     def initialize(self, properties):
+        # Punctual buy signals, with -1 for always, 0 never
+        self.start_day = properties.get('start_day', 2)
+        # regularly buy signals
+        self.rate = properties.get('rate', -1)
+
         if properties.get('interactive'):
             self.use(msg.RedisProtocol(self.identity).check)
         device = properties.get('notify')
@@ -34,12 +42,20 @@ class BuyAndHold(TradingFactory):
             self.use(database.RethinkdbBackend(self.identity, True)
                      .save_portfolio)
 
-    def event(self, data):
-        signals = {}
+        self.set_commission(commission.PerTrade(
+            cost=properties.get('commission', 2.5)))
 
-        # Only cares about buying everything at the beginning
-        if self.day == 2:
-            for ticker in data:
-                signals[ticker] = data[ticker].price
+    def _check_rate(self):
+        return (self.rate > 0) and (self.days % self.rate == 0)
+
+    def event(self, data):
+        signals = {'buy': {}, 'sell': {}}
+
+        # One shot or always buying or regularly
+        if self.days == self.start_day \
+                or self.start_day < 0 \
+                or self._check_rate():
+            # Only cares about buying everything
+            signals['buy'] = data
 
         return signals

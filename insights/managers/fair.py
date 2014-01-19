@@ -1,5 +1,5 @@
 #
-# Copyright 2013 Xavier Bruhiere
+# Copyright 2014 Xavier Bruhiere
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ class Fair(PortfolioFactory):
     Dispatch equals weigths for buy signals and give up everything on sell ones
     '''
     def optimize(self, date, to_buy, to_sell, parameters):
-        allocations = dict()
+        allocations = {}
         if to_buy:
             fraction = round(1.0 / float(len(to_buy)), 2)
             for s in to_buy:

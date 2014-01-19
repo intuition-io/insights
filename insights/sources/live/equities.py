@@ -14,15 +14,10 @@
 # limitations under the License.
 
 
-import sys
-import logbook
 import pandas as pd
 
 from intuition.zipline.data_source import LiveDataFactory
 import intuition.data.remote as remote
-
-
-log = logbook.Logger('intuition.sources.live.equities')
 
 
 class EquitiesLiveSource(LiveDataFactory):
@@ -46,8 +41,7 @@ class EquitiesLiveSource(LiveDataFactory):
         snapshot = self.data.fetch_equities_snapshot(symbols=self.sids,
                                                      level=1)
         if snapshot.empty:
-            log.error('** No data available, maybe stopped by google ?')
-            sys.exit(2)
+            raise ValueError('no equities data available')
         #FIXME We need volume field to be consistent with the API
         row = {}
         for sid in snapshot.columns:

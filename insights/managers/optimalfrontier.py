@@ -1,35 +1,17 @@
-#
-# Copyright 2013 Xavier Bruhiere
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-
 import os
 import re
-
 import pandas as pd
 import rpy2.robjects as robjects
 
 from intuition.zipline.portfolio import PortfolioFactory
+import insights.transforms as transforms
 
 
 class OptimalFrontier(PortfolioFactory):
     '''
     Computes with R the efficient frontier and pick up the optimize point on it
     '''
-    def __init__(self, parameters):
-        PortfolioFactory.__init__(self, parameters)
-
+    def initialize(self, parameters):
         # R stuff: R functions file and rpy interface
         self.r = robjects.r
         portfolio_opt_file = '/'.join(
@@ -37,58 +19,67 @@ class OptimalFrontier(PortfolioFactory):
         assert os.path.exists(portfolio_opt_file)
         self.r('source("{}")'.format(portfolio_opt_file))
 
+        self.price_transform = transforms.get_past_returns(
+            refresh_period=parameters.get('refresh', 1),
+            window_length=parameters.get('window', 50),
+            compute_only_full=parameters.get('only_full', True))
+
     def optimize(self, date, to_buy, to_sell, parameters):
-        allocations = dict()
+        allocations = {}
 
         # Considers only portfolio positions + future positions - positions
         # about to be sold
-        positions = set([t for t in self.portfolio.positions.keys()
-                         if self.portfolio.positions[t].amount]
-                        ).union(to_buy).difference(to_sell)
-        if not positions and to_sell:
-            for t in to_sell:
-                allocations[t] = - parameters.get('perc_sell', 1.0)
+        #positions = set([p for p in self.portfolio.positions.keys()
+                         #if self.portfolio.positions[p].amount]
+                        #).union(to_buy.keys()).difference(to_sell.keys())
+
+        for sid in to_sell:
+            allocations[sid] = -parameters.get('perc_sell', 1.0)
+
+        if len(to_buy) == 1:
+            allocations.update(
+                {to_buy.keys()[0]: parameters.get('max_weigths', 0.2)})
             return allocations, 0, 1
-        try:
-            assert(positions)
-        except:
-            self.log.error('** No positions determined')
-        if len(positions) == 1:
-            return {positions.pop(): parameters.get('max_weigths', 0.2)}, 0, 1
 
-        if 'historical_prices' in parameters:
-            #TODO The converion needs dates, should get the complete dataframe
-            raise NotImplementedError()
-            returns = pd.rpy.common.convert_to_r_matrix(
-                pd.DataFrame(parameters['historical_prices']))
+        if 'historical_returns' in parameters:
+            returns_df = parameters['historical_returns']
+            #if not len(returns_df):
+                #return allocations, 0, 1
         else:
-            returns = self.data.fetch_equities_daily(
-                positions, r_type=True, returns=True, indexes={},
-                start=date-pd.datetools.Day(parameters.get('loopback', 50)),
-                end=date)
+            returns_df = self.price_transform.handle_data(to_buy)
+        if returns_df is None:
+            return allocations, 0, 1
 
+        # Remove incomplete data
+        for i, column in enumerate(returns_df):
+            if returns_df[column].isnull().any():
+                self.log.warning('missing data for {}, ignoring'
+                                 .format(column))
+                returns_df = returns_df.dropna(axis=1)
+
+        returns = pd.rpy.common.convert_to_r_matrix(returns_df)
         frontier = self.r('getEfficientFrontier')(
             returns, points=500, Debug=False, graph=False)
+
         if not frontier:
             self.log.warning('No optimal frontier found')
-            return dict(), None, None
+            return allocations, 0, 1
 
         try:
             mp = self.r('marketPortfolio')(
                 frontier, 0.02, Debug=False, graph=False)
         except:
-            self.log.error('** Error running R optimizer')
-            return dict(), None, None
+            self.log.error('error running R optimizer')
+            return allocations, 0, 1
 
-        self.log.debug('Allocation: {}'.format(mp))
         #FIXME Some key errors survive so far
-        for p in positions:
+        for sid in returns_df:
             #NOTE R change a bit names
             try:
-                allocations[p] = round(
-                    mp.rx(re.sub("[-,!\ ]", ".", p))[0][0], 2)
+                allocations[sid] = round(
+                    mp.rx(re.sub("[-,!\ ]", ".", sid))[0][0], 2)
             except:
-                allocations[p] = 0.00
+                allocations[sid] = 0.00
 
         er = round(mp.rx('er')[0][0], 2)
         eStd = round(mp.rx('eStd')[0][0], 2)
@@ -97,19 +88,3 @@ class OptimalFrontier(PortfolioFactory):
             .format(allocations, er, eStd))
 
         return allocations, er, eStd
-
-
-''' Zipline notes:
-self.portfolio.portfolio_value =
-    self.portfolio.cash + self.portfolio.positions_value
-self.portfolio.capital_used =
-    self.portfolio.starting_cash - self.portfolio.cash
-
-ipdb> self.portfolio.positions
-{'Air Products and ': Position(
-{'amount': 100, 'last_sale_price': 47.5,
-'cost_basis': 47.5775, 'sid': 'Air Products and '}
-)}
-
-The manager could monitor many stuff: winning trades, positions, frequency...
-'''

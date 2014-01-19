@@ -1,5 +1,5 @@
 #
-# Copyright 2013 Xavier Bruhiere
+# Copyright 2014 Xavier Bruhiere
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -38,8 +38,10 @@ def _load_context(storage):
     assert (collection in db.collection_names())
     conf_doc = db[collection]
     print 'got {} document'.format(conf_doc.name)
+    context = conf_doc.find_one({'id': conf_id})
+    assert context
 
-    return conf_doc.find_one({'id': conf_id})
+    return context
 
 
 def _normalize_context(context):

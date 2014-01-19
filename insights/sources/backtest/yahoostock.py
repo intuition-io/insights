@@ -14,13 +14,8 @@
 # limitations under the License.
 
 
-import logbook
 from intuition.zipline.data_source import DataFactory
-
 import intuition.data.remote as remote
-
-
-log = logbook.Logger('intuition.source.backtest.yahoo')
 
 
 class YahooPriceSource(DataFactory):

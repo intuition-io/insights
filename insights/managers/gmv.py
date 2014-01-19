@@ -1,22 +1,7 @@
-#
-# Copyright 2013 Xavier Bruhiere
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
+import numpy as np
 
 from intuition.zipline.portfolio import PortfolioFactory
-import numpy as np
-import pandas as pd
+import insights.transforms as transforms
 
 
 def compute_weigths(daily_returns):
@@ -35,7 +20,8 @@ def compute_weigths(daily_returns):
                              one_vector)
 
         return numerator / denominator
-    except:
+    except Exception, error:
+        print(error)
         return np.zeros(len(daily_returns))
 
 
@@ -44,6 +30,13 @@ class GlobalMinimumVariance(PortfolioFactory):
     '''
     Computes from data history a suitable compromise between risks and returns.
     '''
+    def initialize(self, config):
+
+        self.price_transform = transforms.get_past_prices(
+            #refresh_period=10,
+            window_length=config.get('window', 40),
+            compute_only_full=config.get('only_full', True))
+
     def optimize(self, date, to_buy, to_sell, parameters):
 
         allocations = {}
@@ -55,14 +48,14 @@ class GlobalMinimumVariance(PortfolioFactory):
             if 'historical_prices' in parameters:
                 returns = parameters['historical_prices']
             else:
-                #TODO Download it or check in database
-                #NOTE Download uses here daily data, use google instead ?
-                self.log.notice('No returns provided, downloading them')
-                returns_df = self.remote.fetch_equities_daily(
-                    to_buy, returns=True, indexes={},
-                    start=date - pd.datetools.Day(
-                        parameters.get('loopback', 50)),
-                    end=date)
+                returns_df = self.price_transform.handle_data(to_buy)
+                if returns_df is None:
+                    # Not enough data yet
+                    return allocations, 0, 1
+                for i, column in enumerate(returns_df):
+                    # Remove incomplete data
+                    if returns_df[column].isnull().any():
+                        returns_df = returns_df.dropna(axis=1)
                 returns = returns_df.values
 
             weights = compute_weigths(returns.transpose())
@@ -70,10 +63,7 @@ class GlobalMinimumVariance(PortfolioFactory):
                 self.log.warning('Could not compute weigths')
                 allocations = {}
             else:
-                for i, sid in enumerate(to_buy):
+                for i, sid in enumerate(returns_df):
                     allocations[sid] = float(weights[i])
 
-        # Defaults values
-        e_ret = 0
-        e_risk = 1
-        return allocations, e_ret, e_risk
+        return allocations, 0, 1

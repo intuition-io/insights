@@ -16,13 +16,9 @@
 
 import os
 import pytz
-import logbook
 import pandas as pd
 
 from intuition.zipline.data_source import DataFactory
-
-
-log = logbook.Logger('intuition.source.backtest.csv')
 
 
 class CSVSource(DataFactory):

@@ -4,8 +4,6 @@
 #TODO lib parameters allow to specifie libs installation location
 #install.packages('quantmod', repos='http://cran.univ-paris1.fr/', lib='.')
 install.packages('quantmod', repos='http://cran.univ-paris1.fr/')
-install.packages('RMySQL', repos='http://cran.univ-paris1.fr/')
-install.packages('RSQLite', repos='http://cran.univ-paris1.fr/')
 install.packages('PerformanceAnalytics', repos='http://cran.univ-paris1.fr/')
 install.packages('shiny', repos='http://cran.univ-paris1.fr/')
 install.packages('rzmq', repos='http://cran.univ-paris1.fr/')
