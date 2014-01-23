@@ -58,7 +58,7 @@ manager:
   # And here those you will find under the $parameters dict in optimize()
   max_weight: 0.3
 modules:
-  manager: insights.managers.optimalfrontier.OptimalFrontier
+  manager: insights.managers.fair.Fair
   algorithm: insights.algorithms.gradient.StochasticGradientDescent
   data: insights.sources.live.EquitiesLiveSource
 ```
@@ -101,11 +101,11 @@ class BuyAndHold(TradingFactory):
                      .save_portfolio)
 
     def event(self, data):
-        signals = {}
+        signals = {'buy': {}, 'sell': {}}
 
         if self.day == 2:
             for ticker in data:
-                signals[ticker] = data[ticker].price
+                signals['buy'][ticker] = data[ticker]
 
         return signals
 ```
@@ -170,6 +170,18 @@ class QuandlSource(DataFactory):
         }
 ```
 
+Intuition-db
+------------
+
+A script is provided to help you fill the database (if you want to use the [Database source][4]).
+
+```console
+$ intuition-db -h
+$ # Download data from 2012 to now for 20 random nasdaq stocks
+$ intiution-db dl --start 2012-01-02 --universe nasdaq,20
+```
+
 [1]: https://trello.com/b/WvJDlynt/intuition
 [2]: http://www.quandl.com/
 [3]: https://github.com/hackliff/intuition
+[4]: https://github.com/hackliff/insights/blob/master/insights/sources/backtest/database.py

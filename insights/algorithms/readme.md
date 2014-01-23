@@ -43,20 +43,19 @@ class MyAlgo(TradingFactory):
   def event(self, data):
     '''
     Called for each event.
-    If you can detect trading opportunities, this is where you
-    place orders or fill the signals dictionnary : {'sid 1': price, 'sid 2': -price}
-    The portfolio manager will use it compute the allocation : positive
-    values are buy signals and vice versa.
+    If you can detect trading opportunities, this is where you place orders or
+    fill the signals dictionnary like so {'buy': {sid: data[sid]}, 'sell': {}}
+    The portfolio manager will use it compute the allocation.
     '''
-    signals = {}
+    signals = {'buy': {}, 'sell': {}}
 
     for ticker in data:
         if great_prospect():
             # Currently, if you want to use weight-based strategy allocation,
             # you must provide the current sid price
-            signals[ticker] = data[ticker].price
+            signals['buy'][ticker] = data[ticker]
         if take_profit():
-            signals[ticker] = -data[ticker].price
+            signals['sell'][ticker] = data[ticker]
 
     return signals
 ```
@@ -94,6 +93,12 @@ properties = {refresh: 1, window: 60, gradient_iterations: 5}
 > providing to the portfolio strategy <window_length> days of quote data.
 ```python
 properties = {refresh: 10, window: 40}
+```
+
+* Random
+> For each sid, at each event, randomly choose to sell or buy
+```python
+properties = {buy_trigger: 0.5 < x < 1, sell_trigger: 0 < x < 0.5}
 ```
 
 * Standard Deviation based (Always loose, there's something wrong !)

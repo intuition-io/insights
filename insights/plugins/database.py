@@ -1,5 +1,5 @@
 #
-# Copyright 2013 Xavier Bruhiere
+# Copyright 2014 Xavier Bruhiere
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,10 +17,15 @@
 import os
 import sys
 import copy
+import random
 import logbook
+from clint.textui import progress
+import pandas as pd
 
 import rethinkdb as rdb
 from influxdb import client as influxdb
+
+import intuition.utils.dates as dateutils
 
 
 # We will use these settings later in the code to
@@ -50,18 +55,24 @@ class RethinkdbBackend():
     '''
     Adds RethinkDB database backend to the portfolio
     '''
-    def __init__(self, name, reset=False):
+    def __init__(self, **kwargs):
+        host = kwargs.get('host', DB_CONFIG['host'])
+        port = kwargs.get('port', DB_CONFIG['port'])
+        db = kwargs.get('db', DB_CONFIG['db'])
+        self.table = kwargs.get('table', None)
+
         try:
-            self.session = self._connection()
+            self.session = self._connection(host, port, db)
         except rdb.RqlDriverError, error:
             sys.exit(error)
-        self.table = name
 
         # Prepare the database
-        if DB_CONFIG['db'] not in rdb.db_list().run(self.session):
-            rdb.db_create(DB_CONFIG['db'])
-            self.session = self._connection()
-        if reset:
+        if db not in rdb.db_list().run(self.session):
+            log.info('creating database {}'.format(db))
+            rdb.db_create(db).run(self.session)
+            self.session = self._connection(host, port, db)
+        if kwargs.get('reset') and self.table:
+            log.info('clearing table {}'.format(self.table))
             self._reset_data(self.table)
 
     def _reset_data(self, table):
@@ -73,10 +84,8 @@ class RethinkdbBackend():
         result = rdb.table(table).index_create('date').run(self.session)
         return result.get('created', 0) == 1
 
-    def _connection(self):
-        return rdb.connect(host=DB_CONFIG['host'],
-                           port=DB_CONFIG['port'],
-                           db=DB_CONFIG['db'])
+    def _connection(self, host, port, db):
+        return rdb.connect(host=host, port=port, db=db)
 
     def save_portfolio(self, datetime, portfolio, perf_tracker):
         '''
@@ -103,14 +112,84 @@ class RethinkdbBackend():
                  }).run(self.session)
             log.debug(result)
 
+    def save_quotes(self, table, data, metadata={}, reset=False):
+        if reset:
+            self._reset_data(table)
+        data.columns = map(lambda x: x.replace(' ', '_').lower(), data.columns)
+        length = len(data)
+        for dt, row in progress.bar(data.iterrows(), expected_size=length):
+            record = row.to_dict()
+            record.update({'date': dt})
+            record.update(metadata)
+            report = rdb.table(table).insert(record).run(self.session)
+            assert not report['errors']
+
+    def _load_quotes(self, sids, start, end, select):
+        is_panel = (len(select) > 2)
+        select.append('date')
+        data = {}
+        for table in sids:
+            if table not in rdb.table_list().run(self.session):
+                log.warning('{} not found in database, skipping'
+                            .format(table))
+                continue
+
+            cursor_data = rdb.table(table)\
+                .filter(lambda row: row['date'].during(
+                        start, end))\
+                .pluck(select)\
+                .run(self.session)
+            data[table] = {}
+
+            for row in cursor_data:
+                date = dateutils.normalize_date_format(
+                    row.pop('date')['epoch_time'])
+                if is_panel:
+                    data[table][date] = row
+                else:
+                    data[table][date] = row[select[0]]
+
+        if is_panel:
+            data = {k: v for k, v in data.iteritems() if len(v) > 0}
+            data = pd.Panel(data).transpose(0, 2, 1)
+        else:
+            data = pd.DataFrame(data).dropna(axis=1, how='any')
+        return data
+
+    def quotes(self, sids, start=None, end=None, select='close'):
+        #TODO Fallback to 'close' if 'adjusted_close' not available
+        sids = map(str.lower, map(str, sids))
+        if start:
+            start = rdb.epoch_time(dateutils.UTC_date_to_epoch(start))
+        if end:
+            #TODO Give a notice when given end is > database end
+            end = rdb.epoch_time(dateutils.UTC_date_to_epoch(end))
+        else:
+            end = rdb.now()
+        if select == 'ohlc':
+            #TODO Handle 'adjusted_close'
+            select = ['open', 'high', 'low', 'close', 'volume']
+        if isinstance(select, str):
+            select = [select]
+
+        return self._load_quotes(sids, start, end, select)
+
+    def random_tables(self, n=1000):
+        log.info('generating random list of {} tables'.format(n))
+        tables = rdb.table_list().run(self.session)
+        random.shuffle(tables)
+        return map(str, tables[:n])
+
     def load_portfolio(self, name):
         '''
         Build zipline.Portfolio object from <name> stored in database
         '''
         pass
 
-    def __del__(self):
-        self.session.close()
+    #def __del__(self):
+        #FIXME RqlClientError(u'MALFORMED PROTOBUF (missing field
+        #`type`):\ntoken: 508\n1: 4\n5: 1\n')
+        #self.session.close()
 
 
 class InfluxdbBackend():

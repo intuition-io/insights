@@ -18,7 +18,7 @@ from intuition.zipline.data_source import DataFactory
 import intuition.data.remote as remote
 
 
-class YahooPriceSource(DataFactory):
+class YahooPrices(DataFactory):
     """
     Fetchs prices for the given sids from yahoo.com
     """
@@ -36,7 +36,7 @@ class YahooPriceSource(DataFactory):
             self.sids, indexes={}, start=self.start, end=self.end)
 
 
-class YahooOHLCSource(DataFactory):
+class YahooOHLC(DataFactory):
     """
     Fetchs OHLC data for the given sids from yahoo.com
     """
@@ -50,6 +50,7 @@ class YahooOHLCSource(DataFactory):
         }
 
         # Add additional fields.
+        #import ipdb; ipdb.set_trace()
         for field_name in self.data.minor_axis:
             if field_name in ['price', 'volume', 'dt', 'sid']:
                 continue
@@ -57,5 +58,7 @@ class YahooOHLCSource(DataFactory):
         return mapping
 
     def get_data(self):
-        return remote.Data().fetch_equities_daily(
+        data = remote.Data().fetch_equities_daily(
             self.sids, ohlc=True, indexes={}, start=self.start, end=self.end)
+        self.sids = data.items
+        return data

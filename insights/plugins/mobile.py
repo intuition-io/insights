@@ -30,7 +30,7 @@ def push_to_android(api_key, device_id, payload, push_type):
 
 class AndroidPush():
     '''
-    Push Android push notifications
+    Push Android notifications
     https://www.pushbullet.com/api
     '''
 
@@ -69,11 +69,13 @@ class AndroidPush():
         elif 'file' in payload:
             push_type = 'file'
             #TODO File push needs multi-part form encoding
-            raise NotImplementedError()
+            raise NotImplementedError('file payload is not yet supported')
         elif 'items' in payload:
             push_type = 'list'
         elif 'body' in payload:
             push_type = 'note'
+        else:
+            raise ValueError('invalid push payload')
         return push_type
 
     def push(self, payload, push_type=None):
@@ -88,14 +90,8 @@ class AndroidPush():
         ''' Notifications are stopped if
           * The last one was too close
           * We reach a rated limit '''
-        #is_ok = True
         too_early = (time.time() - self._last_time < self._min_interval)
-        #if time.time() - self._last_time < self._min_interval:
-            #is_ok = False
         too_much = (self._count >= self._rate_limit)
-        #if self._count >= self._rate_limit:
-            #is_ok = False
-        #return is_ok
         return (False if (too_early or too_much) else True)
 
     def notify(self, orderbook):

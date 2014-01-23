@@ -43,3 +43,4 @@ nosetests.xml
 
 # Not ready
 optimization/*
+authtoken.p

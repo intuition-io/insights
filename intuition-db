@@ -1,0 +1,144 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
+#
+# Copyright 2014 Xavier Bruhiere
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+import sys
+import argparse
+from clint.textui import puts, colored, indent
+from datetime import datetime
+
+from insights.plugins.database import RethinkdbBackend
+import intuition.data.utils as datautils
+import intuition.utils.dates as datesutils
+from intuition.data.quandl import DataQuandl
+#import ystockquote
+import intuition.data.ystockquote as ystockquote
+import intuition.utils.utils as utils
+
+
+def parse_cli():
+    parser = argparse.ArgumentParser(
+        description='Intuition-db, quotes database manager')
+    parser.add_argument('-V', '--version',
+                        action='version',
+                        version='%(prog)s v0.0.1 Licence Apache 2.0',
+                        help='Print program version')
+    parser.add_argument('command', type=str,
+                        help='command [dl, sync]')
+    parser.add_argument('-v', '--verbose',
+                        action='store_true',
+                        help='Print logs on stdout')
+    parser.add_argument('-u', '--universe',
+                        action='store', required=True,
+                        help='market universe to evaluate')
+    parser.add_argument('-s', '--start',
+                        action='store', default='2006-01-01',
+                        help='start date for quotes')
+    parser.add_argument('-e', '--end',
+                        action='store', default=datetime.today(),
+                        help='end date for quotes')
+    parser.add_argument('-b', '--backend',
+                        action='store', default='rethinkdb',
+                        help='database backend to use for storage')
+    return parser.parse_args()
+
+
+def msg(body, indentation=2):
+    with indent(indentation, 'info | '):
+        puts(colored.blue(body))
+
+
+def warning(body, indentation=2):
+    with indent(indentation, 'warn | '):
+        puts(colored.red(body))
+
+
+def fill_stock_metadata(sid):
+    metadata = {}
+    try:
+        metadata['name'] = ystockquote.get_company_name(sid)
+    except Exception, error:
+        print(error)
+        sys.exit(warning('sometimes it just times out, retry later'))
+    metadata['exchange'] = ystockquote.get_stock_exchange(sid)
+    if metadata['exchange'].find('Nasdaq') > 0:
+        # It returns NasdaqNM
+        metadata['exchange'] = 'Nasdaq'
+    metadata['type'] = ystockquote.get_type(sid)
+    metadata['revenue'] = ystockquote.get_revenue(sid)
+    #FIXME Almost never found
+    #metadata['index'] = ystockquote.get_indices(sid)
+    metadata['sector'] = ystockquote.get_sector(sid)
+    metadata['industry'] = ystockquote.get_industry(sid)
+
+    msg('successfully fetched metadata about {}'.format(sid))
+    msg(utils.emphasis(metadata))
+    return metadata
+
+
+def store(data, backend):
+    msg('using {} backend for storage'.format(backend))
+    db = RethinkdbBackend(db='quotes')
+    #TODO remove .pa and indicate markets
+    for sid in data:
+        # Rethinkdb doesn't accept '.' in table names
+        dot_position = sid.find('.')
+        if dot_position > 0:
+            symbol = sid[:dot_position].lower()
+        else:
+            symbol = sid.lower()
+        # name, exchange, index, sector, industry
+        metadata = fill_stock_metadata(sid)
+        msg('saving {} in database'.format(sid))
+        if not data[sid].isnull().any().any():
+            db.save_quotes(symbol, data[sid], metadata, reset=True)
+    msg('done')
+
+
+def main():
+    args = parse_cli()
+
+    sids = datautils.smart_selector(args.universe)
+
+    start = datesutils.normalize_date_format(args.start)
+    if isinstance(args.end, str):
+        end = datesutils.normalize_date_format(args.end)
+    else:
+        end = args.end
+
+    msg('- Intuition database manager')
+
+    #TODO sync (i.e. start = detect_db, end = now())
+
+    #TODO Fetch more informations
+    if args.command == 'dl':
+        warning('currently only supports nasdaq symbols', 4)
+        msg('downloading {} data ({} -> {})'.format(sids, start, end), 4)
+        feed = DataQuandl()
+        data = feed.fetch(
+            sids, start_date=start, end_date=end, returns='pandas')
+        msg('done')
+
+        store(data, args.backend)
+
+    elif args.command == 'sync':
+        raise NotImplementedError
+
+
+if __name__ == '__main__':
+    sys.exit(main())

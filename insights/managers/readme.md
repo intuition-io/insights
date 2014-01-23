@@ -42,20 +42,21 @@ class MyManager(PortfolioFactory):
         Parameters
             date: datetime.timestamp
                 Date signals were emitted
-            to_buy: dict(...)
-                Symbols with their strength to buy triggered by the strategy signals
-            to_sell: dict(...)
-                Symbols with their strength to sell triggered by the strategy signals
+            to_buy: zipline.Position
+                Dict-like positions taged as "buy opportunity" by the algorithm
+            to_sell: zipline.Position
+                Same but for sell signals
             parameters: dict(...)
                 Custom user parameters
-                An algo field in it stores data from the user-
-                defined algorithm
+                You can fill it through the configuration of using in your
+                algorithm "self.manager.advise(key=value)"
         _____________________________________________
         Return:
             allocations: dict(...)
-                Symbols with their -> weigths -> for buy: according the whole portfolio value   (must be floats)
-                                              -> for sell: according total symbol position in portfolio
-                                   -> amount: number of stocks to process (must be ints)
+                Symbols with their
+                    -> weigths -> for buy: according the whole portfolio value   (must be floats)
+                               -> for sell: according total symbol position in portfolio
+                    -> amount: number of stocks to process (must be ints)
             e_ret: float
                 Expected return
             e_risk: float

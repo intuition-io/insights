@@ -29,6 +29,8 @@ requires = [
     'pandas>=0.13.0.dev',
     'patsy',
     'redis',
+    'datetime',
+    'clint',
     'rpy2',
     'pymongo',
     'PyYAML',
@@ -69,6 +71,7 @@ setup(
         'Topic :: Scientific/Engineering :: Information Analysis',
         'Topic :: System :: Distributed Computing',
     ],
+    scripts=['intuition-db'],
     data_files=[(os.path.expanduser('~/.intuition/R'), glob('./R/*'))],
     dependency_links=[
         'http://github.com/pydata/pandas/tarball/master#egg=pandas-0.13.0.dev']

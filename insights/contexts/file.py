@@ -81,8 +81,9 @@ def build_context(storage):
 
     algorithm = context.pop('algorithm', {})
     manager = context.pop('manager', {})
+    data = context.pop('data', {})
 
     if context:
         _normalize_context(context)
 
-    return context, {'algorithm': algorithm, 'manager': manager}
+    return context, {'algorithm': algorithm, 'manager': manager, 'data': data}

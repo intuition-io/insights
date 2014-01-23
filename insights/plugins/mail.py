@@ -18,20 +18,20 @@ import requests
 import os
 
 
+#TODO Get some inspiration: http://godoc.org/github.com/riobard/go-mailgun
 class Mailgun():
     '''
     Send emails through mailgun api
     '''
     api_url = 'https://api.mailgun.net/v2/{}/messages'
-    api_key = ''
+    _api_key = ''
 
     def __init__(self, friendly_name, domain):
         self.from_email = '{} <me@{}>'.format(friendly_name, domain)
         self.api_url = self.api_url.format(domain)
-        if 'MAILGUN_API_KEY' in os.environ:
-            self.api_key = os.environ['MAILGUN_API_KEY']
+        self._api_key = os.environ.get('MAILGUN_API_KEY')
 
-    def send_mail(self, targets, subject, body):
+    def send(self, targets, subject, body):
         if isinstance(targets, str):
             targets = [targets]
         payload = {
@@ -41,5 +41,5 @@ class Mailgun():
             'text': body
         }
         return requests.post(self.api_url,
-                             auth=('api', self.api_key),
+                             auth=('api', self._api_key),
                              data=payload)
