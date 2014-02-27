@@ -7,7 +7,7 @@ from numpy import dot
 from numpy.linalg import inv
 import numpy as np
 
-from intuition.zipline.portfolio import PortfolioFactory
+from intuition.api.portfolio import PortfolioFactory
 import insights.managers.utils as utils
 import insights.transforms as transforms
 

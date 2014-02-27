@@ -17,7 +17,7 @@
 import random
 import zipline.finance.commission as commission
 
-from intuition.zipline.algorithm import TradingFactory
+from intuition.api.algorithm import TradingFactory
 import insights.transforms as transforms
 import insights.plugins.database as database
 import insights.plugins.mobile as mobile
@@ -41,8 +41,9 @@ class BuyAndHold(TradingFactory):
         if device:
             self.use(mobile.AndroidPush(device).notify)
         if properties.get('save'):
-            self.use(database.RethinkdbBackend(self.identity, True)
-                     .save_portfolio)
+            self.use(database.RethinkdbBackend(
+                table=self.identity, db='portfolios', reset=True)
+                .save_portfolio)
 
         self.set_commission(commission.PerTrade(
             cost=properties.get('commission', 2.5)))
@@ -75,8 +76,9 @@ class Random(TradingFactory):
         if device:
             self.use(mobile.AndroidPush(device).notify)
         if properties.get('save'):
-            self.use(database.RethinkdbBackend(self.identity, True)
-                     .save_portfolio)
+            self.use(database.RethinkdbBackend(
+                table=self.identity, db='portfolios', reset=True)
+                .save_portfolio)
 
         self.set_commission(commission.PerTrade(
             cost=properties.get('commission', 2.5)))
@@ -91,7 +93,6 @@ class Random(TradingFactory):
 
     def event(self, data):
         signals = {'buy': {}, 'sell': {}}
-
         # One shot or always buying or regularly
         for sid in data:
             luck = random.random()
@@ -118,8 +119,9 @@ class RegularRebalance(TradingFactory):
         if device:
             self.use(mobile.AndroidPush(device).notify)
         if properties.get('save'):
-            self.use(database.RethinkdbBackend(self.identity, True)
-                     .save_portfolio)
+            self.use(database.RethinkdbBackend(
+                table=self.identity, db='portfolios', reset=True)
+                .save_portfolio)
 
         # Set Max and Min positions in security
         self.max_notional = 1000000.1

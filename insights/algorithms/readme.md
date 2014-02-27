@@ -32,7 +32,7 @@ class MyAlgo(TradingFactory):
         self.use(database.RethinkdbBackend(self.identity, True)
                  .save_portfolio)
 
-  def warming(self, data):
+  def warm(self, data):
     '''
     An other function ran once, after everything has been initialized, the
     very first time of trading

@@ -1,7 +1,7 @@
 from zipline.transforms import MovingAverage
 import zipline.finance.commission as commission
 
-from intuition.zipline.algorithm import TradingFactory
+from intuition.api.algorithm import TradingFactory
 import insights.plugins.database as database
 import insights.plugins.mobile as mobile
 import insights.plugins.messaging as msg
@@ -20,8 +20,9 @@ class DualMovingAverage(TradingFactory):
         if device:
             self.use(mobile.AndroidPush(device).notify)
         if properties.get('save'):
-            self.use(database.RethinkdbBackend(self.identity, True)
-                     .save_portfolio)
+            self.use(database.RethinkdbBackend(
+                table=self.identity, db='portfolios', reset=True)
+                .save_portfolio)
 
         long_window = properties.get('long_window', 30)
         short_window = properties.get('short_window', None)
@@ -45,7 +46,7 @@ class DualMovingAverage(TradingFactory):
         self.set_commission(commission.PerTrade(
             cost=properties.get('commission', 2.5)))
 
-    def warming(self, data):
+    def warm(self, data):
         for sid in data:
             self.invested[sid] = False
 
@@ -81,8 +82,9 @@ class Momentum(TradingFactory):
         if device:
             self.use(mobile.AndroidPush(device).notify)
         if properties.get('save'):
-            self.use(database.RethinkdbBackend(self.identity, True)
-                     .save_portfolio)
+            self.use(database.RethinkdbBackend(
+                table=self.identity, db='portfolios', reset=True)
+                .save_portfolio)
 
         self.max_notional = 2000.1
         self.min_notional = -2000.0

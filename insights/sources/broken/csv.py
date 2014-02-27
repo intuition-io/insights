@@ -18,7 +18,7 @@ import os
 import pytz
 import pandas as pd
 
-from intuition.zipline.data_source import DataFactory
+from intuition.api.data_source import DataFactory
 
 
 class CSVSource(DataFactory):

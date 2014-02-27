@@ -17,6 +17,7 @@
 import os
 import sys
 import copy
+import pytz
 import random
 import logbook
 from clint.textui import progress
@@ -25,7 +26,7 @@ import pandas as pd
 import rethinkdb as rdb
 from influxdb import client as influxdb
 
-import intuition.utils.dates as dateutils
+import intuition.utils
 
 
 # We will use these settings later in the code to
@@ -91,7 +92,7 @@ class RethinkdbBackend():
         '''
         Store in Rethinkdb a zipline.Portfolio object
         '''
-        if perf_tracker.progress != 0.0:
+        if perf_tracker.progress != 0.0 and self.table:
             log.info('Saving portfolio in database')
             result = rdb.table(self.table).insert(
                 {'date': datetime,
@@ -104,7 +105,7 @@ class RethinkdbBackend():
         '''
         Stores in database zipline.perf_tracker.cumulative_risk_metrics
         '''
-        if perf_tracker.progress != 0.0:
+        if perf_tracker.progress != 0.0 and self.table:
             log.info('Saving cummulative metrics in database')
             result = rdb.table(self.table).insert(
                 {'date': datetime,
@@ -142,12 +143,11 @@ class RethinkdbBackend():
             data[table] = {}
 
             for row in cursor_data:
-                date = dateutils.normalize_date_format(
-                    row.pop('date')['epoch_time'])
-                if is_panel:
-                    data[table][date] = row
-                else:
-                    data[table][date] = row[select[0]]
+                # tzinfo of the object is rethinkdb specific
+                date = row.pop('date').astimezone(pytz.utc)
+                #date = intuition.utils.normalize_date_format(
+                    #row.pop('date')['epoch_time'])
+                data[table][date] = row if is_panel else row[select[0]]
 
         if is_panel:
             data = {k: v for k, v in data.iteritems() if len(v) > 0}
@@ -160,10 +160,10 @@ class RethinkdbBackend():
         #TODO Fallback to 'close' if 'adjusted_close' not available
         sids = map(str.lower, map(str, sids))
         if start:
-            start = rdb.epoch_time(dateutils.UTC_date_to_epoch(start))
+            start = rdb.epoch_time(intuition.utils.UTC_date_to_epoch(start))
         if end:
             #TODO Give a notice when given end is > database end
-            end = rdb.epoch_time(dateutils.UTC_date_to_epoch(end))
+            end = rdb.epoch_time(intuition.utils.UTC_date_to_epoch(end))
         else:
             end = rdb.now()
         if select == 'ohlc':

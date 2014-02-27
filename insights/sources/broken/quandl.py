@@ -14,7 +14,7 @@
 # limitations under the License.
 
 
-from intuition.zipline.data_source import DataFactory
+from intuition.api.data_source import DataFactory
 from intuition.data.quandl import DataQuandl
 
 

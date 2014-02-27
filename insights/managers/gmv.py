@@ -1,6 +1,6 @@
 import numpy as np
 
-from intuition.zipline.portfolio import PortfolioFactory
+from intuition.api.portfolio import PortfolioFactory
 import insights.transforms as transforms
 
 

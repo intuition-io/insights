@@ -5,7 +5,7 @@ import numpy as np
 from zipline.transforms import batch_transform
 import zipline.finance.commission as commission
 
-from intuition.zipline.algorithm import TradingFactory
+from intuition.api.algorithm import TradingFactory
 import insights.plugins.database as database
 import insights.plugins.messaging as messaging
 import insights.plugins.mobile as mobile
@@ -30,8 +30,9 @@ class StochasticGradientDescent(TradingFactory):
         if device:
             self.use(mobile.AndroidPush(device).notify)
         if properties.get('save'):
-            self.use(database.RethinkdbBackend(self.identity, True)
-                     .save_portfolio)
+            self.use(database.RethinkdbBackend(
+                table=self.identity, db='portfolios', reset=True)
+                .save_portfolio)
 
         self.rebalance_period = properties.get('rebalance_period', 5)
 

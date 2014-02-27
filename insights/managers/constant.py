@@ -14,7 +14,7 @@
 # limitations under the License.
 
 
-from intuition.zipline.portfolio import PortfolioFactory
+from intuition.api.portfolio import PortfolioFactory
 
 
 class Constant(PortfolioFactory):

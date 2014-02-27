@@ -3,7 +3,7 @@ import re
 import pandas as pd
 import rpy2.robjects as robjects
 
-from intuition.zipline.portfolio import PortfolioFactory
+from intuition.api.portfolio import PortfolioFactory
 import insights.transforms as transforms
 
 

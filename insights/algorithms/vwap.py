@@ -1,7 +1,7 @@
 from zipline.transforms import MovingVWAP
 import zipline.finance.commission as commission
 
-from intuition.zipline.algorithm import TradingFactory
+from intuition.api.algorithm import TradingFactory
 import insights.plugins.database as database
 import insights.plugins.mobile as mobile
 import insights.plugins.messaging as msg
@@ -18,8 +18,9 @@ class VolumeWeightAveragePrice(TradingFactory):
         if device:
             self.use(mobile.AndroidPush(device).notify)
         if properties.get('save'):
-            self.use(database.RethinkdbBackend(self.identity, True)
-                     .save_portfolio)
+            self.use(database.RethinkdbBackend(
+                table=self.identity, db='portfolios', reset=True)
+                .save_portfolio)
 
         self.buy_trigger = 1 + (
             float(properties.get('buy_trigger', -5)) / 100)

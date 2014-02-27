@@ -1,7 +1,7 @@
 from zipline.transforms import MovingVWAP, MovingStandardDev
 import zipline.finance.commission as commission
 
-from intuition.zipline.algorithm import TradingFactory
+from intuition.api.algorithm import TradingFactory
 import insights.plugins.database as database
 import insights.plugins.mobile as mobile
 import insights.plugins.messaging as msg
@@ -12,8 +12,9 @@ class StddevBased(TradingFactory):
 
     def initialize(self, properties):
         if properties.get('save'):
-            self.use(database.RethinkdbBackend(self.identity, True)
-                     .save_portfolio)
+            self.use(database.RethinkdbBackend(
+                table=self.identity, db='portfolios', reset=True)
+                .save_portfolio)
         device = properties.get('notify')
         if device:
             self.use(mobile.AndroidPush(device).notify)

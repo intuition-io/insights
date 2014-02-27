@@ -1,6 +1,6 @@
 import numpy as np
 
-from intuition.zipline.portfolio import PortfolioFactory
+from intuition.api.portfolio import PortfolioFactory
 import insights.managers.utils as utils
 
 
@@ -18,7 +18,7 @@ class OLMAR(PortfolioFactory):
         self.log.debug(configuration)
         self.eps = configuration.get('eps', 1)
 
-    def _warming(self, data):
+    def warm(self, data):
         self.m = len(data.keys())
         self.b_t = np.ones(self.m) / self.m
 
@@ -52,10 +52,14 @@ class OLMAR(PortfolioFactory):
 
     def optimize(self, date, to_buy, to_sell, parameters):
         # This implementation only process buy signals
+        allocations = {}
+        for sid in to_sell:
+            allocations[sid] = to_sell[sid].amount
+
         data = to_buy
 
-        if not self.initialized:
-            self._warming(data)
+        #if not self.initialized:
+            #self._warm(data)
 
         x_tilde = np.zeros(self.m)
         b = np.zeros(self.m)
@@ -89,7 +93,7 @@ class OLMAR(PortfolioFactory):
         b_norm = utils.simplex_projection(b)
         np.testing.assert_almost_equal(b_norm.sum(), 1)
 
-        allocations = self._rebalance_portfolio(data, b_norm)
+        allocations.update(self._rebalance_portfolio(data, b_norm))
 
         # update portfolio
         self.b_t = b_norm

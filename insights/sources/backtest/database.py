@@ -15,7 +15,6 @@
 
 
 from insights.plugins.database import RethinkdbBackend
-from intuition.zipline.data_source import DataFactory
 
 
 def remove_extention(sid):
@@ -23,22 +22,15 @@ def remove_extention(sid):
     return sid[:dot_pos] if dot_pos > 0 else sid
 
 
-class RethinkdbPrices(DataFactory):
+class RethinkdbPrices(object):
     '''
     Get quotes from Rethinkdb database
     '''
     select = 'close'
 
-    def initialize(self, data_descriptor, **kwargs):
+    def __init__(self, data_descriptor):
         self.db = RethinkdbBackend(
             db=data_descriptor.get('database', 'quotes'))
-
-        if self.sids[0] == 'random':
-            # --universe random[,4]
-            count = int(self.sids[1]) if (len(self.sids) == 2) else 10
-            self.sids = self.db.random_tables(count)
-        else:
-            self.sids = map(remove_extention, self.sids)
 
     @property
     def mapping(self):
@@ -49,56 +41,9 @@ class RethinkdbPrices(DataFactory):
             'volume': (int, 'volume'),
         }
 
-    def get_data(self):
+    def get_data(self, sids, start, end):
         #TODO Use 'adjusted_close'
-        data = self.db.quotes(self.sids,
-                              start=self.start,
-                              end=self.end,
+        return self.db.quotes(sids,
+                              start=start,
+                              end=end,
                               select=self.select)
-        # Unknown data were poped from dataframe
-        self.sids = data.columns
-        return data
-
-
-#class RethinkdbOHLC(RethinkdbPrices):
-class RethinkdbOHLC(DataFactory):
-    '''
-    Get quotes from Rethinkdb database
-    '''
-
-    select = 'ohlc'
-
-    def initialize(self, data_descriptor, **kwargs):
-        self.db = RethinkdbBackend(db='quotes')
-
-        if self.sids[0] == 'random':
-            # --universe random[,4]
-            count = int(self.sids[1]) if (len(self.sids) == 2) else 10
-            self.sids = self.db.random_tables(count)
-        else:
-            self.sids = map(remove_extention, self.sids)
-
-    @property
-    def mapping(self):
-        #FIXME Some NaN values survice so far
-        mapping = {
-            'dt': (lambda x: x, 'dt'),
-            'sid': (lambda x: x, 'sid'),
-            'price': (float, 'close'),
-            'volume': (int, 'volume'),
-        }
-        # Add additional fields.
-        for field_name in self.data.minor_axis:
-            if field_name in ['close', 'volume', 'dt', 'sid']:
-                continue
-            mapping[field_name] = (lambda x: x, field_name)
-        return mapping
-
-    def get_data(self):
-        data = self.db.quotes(self.sids,
-                              start=self.start,
-                              end=self.end,
-                              select=self.select)
-        # Unknown data were poped from dataframe
-        self.sids = data.items
-        return data
