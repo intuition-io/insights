@@ -1,25 +1,24 @@
-from zipline.transforms import MovingVWAP, MovingStandardDev
-import zipline.finance.commission as commission
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
 
+'''
+  Standard deviation based algorithm
+  ----------------------------------
+
+  :copyright (c) 2014 Xavier Bruhiere
+  :license: Apache 2.0, see LICENSE for more details.
+'''
+
+from zipline.transforms import MovingVWAP, MovingStandardDev
 from intuition.api.algorithm import TradingFactory
-import insights.plugins.database as database
-import insights.plugins.mobile as mobile
-import insights.plugins.messaging as msg
 
 
 #TODO Now zipline offers orders methods with limit and stop loss
 class StddevBased(TradingFactory):
 
     def initialize(self, properties):
-        if properties.get('save'):
-            self.use(database.RethinkdbBackend(
-                table=self.identity, db='portfolios', reset=True)
-                .save_portfolio)
-        device = properties.get('notify')
-        if device:
-            self.use(mobile.AndroidPush(device).notify)
-        if properties.get('interactive'):
-            self.use(msg.RedisProtocol(self.identity).check)
+        # Interactive, mobile, hipchat, database and commission middlewares
+        self.use_default_middlewares(properties)
 
         # Variable to hold opening price of long trades
         self.long_open_price = 0
@@ -50,9 +49,6 @@ class StddevBased(TradingFactory):
         self.add_transform(MovingVWAP,
                            'vwap',
                            window_length=properties.get('vwap_window', 5))
-
-        self.set_commission(commission.PerTrade(
-            cost=properties.get('commission', 2.5)))
 
     def event(self, data):
         signals = {'buy': {}, 'sell': {}}

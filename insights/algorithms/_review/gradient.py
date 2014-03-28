@@ -1,15 +1,18 @@
-# encoding: utf-8
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
+
+'''
+  Gradient algorithm
+  ------------------
+
+  :copyright (c) 2014 Xavier Bruhiere.
+  :license: Apache 2.0, see LICENSE for more details.
+'''
+
 import random
 import numpy as np
-
 from zipline.transforms import batch_transform
-import zipline.finance.commission as commission
-
 from intuition.api.algorithm import TradingFactory
-import insights.plugins.database as database
-import insights.plugins.messaging as messaging
-import insights.plugins.mobile as mobile
-#import insights.plugins.utils as utils
 
 
 # https://www.quantopian.com/posts/\
@@ -23,16 +26,9 @@ class StochasticGradientDescent(TradingFactory):
     pick the last predictor value trained after certain iterations.
     '''
     def initialize(self, properties):
-        #self.use(utils.debug_portfolio)
-        if properties.get('interactive'):
-            self.use(messaging.RedisProtocol(self.identity).check)
-        device = properties.get('notify')
-        if device:
-            self.use(mobile.AndroidPush(device).notify)
-        if properties.get('save'):
-            self.use(database.RethinkdbBackend(
-                table=self.identity, db='portfolios', reset=True)
-                .save_portfolio)
+
+        # Interactive, mobile, hipchat, database and commission middlewares
+        self.use_default_middlewares(properties)
 
         self.rebalance_period = properties.get('rebalance_period', 5)
 
@@ -43,9 +39,6 @@ class StochasticGradientDescent(TradingFactory):
         self.calculate_theta = calculate_theta(
             refresh_period=properties.get('refresh', 1),
             window_length=properties.get('window', 60))
-
-        self.set_commission(commission.PerTrade(
-            cost=properties.get('commission', 2.5)))
 
     def event(self, data):
         signals = {'buy': {}, 'sell': {}}

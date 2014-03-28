@@ -1,27 +1,24 @@
-from zipline.transforms import MovingVWAP
-import zipline.finance.commission as commission
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
 
+'''
+  Standard deviation based algorithm
+  ----------------------------------
+
+  :copyright (c) 2014 Xavier Bruhiere
+  :license: Apache 2.0, see LICENSE for more details.
+'''
+
+from zipline.transforms import MovingVWAP
 from intuition.api.algorithm import TradingFactory
-import insights.plugins.database as database
-import insights.plugins.mobile as mobile
-import insights.plugins.messaging as msg
 
 
 # https://www.quantopian.com/posts/updated-multi-sid-example-algorithm-1
 class VolumeWeightAveragePrice(TradingFactory):
 
     def initialize(self, properties):
-        # Common setup
-        if properties.get('interactive'):
-            self.use(msg.RedisProtocol(self.identity).check)
-        device = properties.get('notify')
-        if device:
-            self.use(mobile.AndroidPush(device).notify)
-        if properties.get('save'):
-            self.use(database.RethinkdbBackend(
-                table=self.identity, db='portfolios', reset=True)
-                .save_portfolio)
-
+        # Interactive, mobile, hipchat, database and commission middlewares
+        self.use_default_middlewares(properties)
         self.buy_trigger = 1 + (
             float(properties.get('buy_trigger', -5)) / 100)
         self.sell_trigger = 1 + (
@@ -33,9 +30,6 @@ class VolumeWeightAveragePrice(TradingFactory):
 
         self.add_transform(MovingVWAP, 'vwap', market_aware=True,
                            window_length=properties.get('window_length', 3))
-
-        self.set_commission(commission.PerTrade(
-            cost=properties.get('commission', 2.5)))
 
     def event(self, data):
         signals = {'buy': {}, 'sell': {}}

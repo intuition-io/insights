@@ -9,16 +9,17 @@
   :license: Apache 2.0, see LICENSE for more details.
 '''
 
-
 import random
 import pandas as pd
 
 
-class FakeLiveSource(object):
-    """
+class Random(object):
+    '''
     At each event datetime of the provided index, FakeLiveSource
     generates random prices
-    """
+    '''
+    def __init__(self, sids, properties):
+        pass
 
     @property
     def mapping(self):
@@ -33,7 +34,7 @@ class FakeLiveSource(object):
         return {
             'price': 100 * random.random(),
             'volume': 10000 * random.random()
-            }
+        }
 
     def get_data(self, sids):
         data = {}

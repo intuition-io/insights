@@ -1,9 +1,15 @@
-import zipline.finance.commission as commission
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
+
+'''
+  Standard deviation based algorithm
+  ----------------------------------
+
+  :copyright (c) 2014 Xavier Bruhiere
+  :license: Apache 2.0, see LICENSE for more details.
+'''
 
 from intuition.api.algorithm import TradingFactory
-import insights.plugins.database as database
-import insights.plugins.mobile as mobile
-import insights.plugins.messaging as msg
 
 
 # https://www.quantopian.com/posts/auto-adjusting-stop-loss
@@ -12,18 +18,8 @@ class AutoAdjustingStopLoss(TradingFactory):
     stocks = {}
 
     def initialize(self, properties):
-        if properties.get('interactive'):
-            self.use(msg.RedisProtocol(self.identity).check)
-        device = properties.get('notify')
-        if device:
-            self.use(mobile.AndroidPush(device).notify)
-        if properties.get('save'):
-            self.use(database.RethinkdbBackend(
-                table=self.identity, db='portfolios', reset=True)
-                .save_portfolio)
-
-        self.set_commission(commission.PerTrade(
-            cost=properties.get('commission', 2.5)))
+        # Interactive, mobile, hipchat, database and commission middlewares
+        self.use_default_middlewares(properties)
 
     def event(self, data):
         signals = {'buy': {}, 'sell': {}}

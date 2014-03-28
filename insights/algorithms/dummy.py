@@ -1,52 +1,36 @@
-#
-# Copyright 2014 Xavier Bruhiere
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
 
+'''
+  Dummy algorithms
+  ----------------
+
+  :copyright (c) 2014 Xavier Bruhiere.
+  :license: Apache 2.0, see LICENSE for more details.
+'''
 
 import random
-import zipline.finance.commission as commission
-
 from intuition.api.algorithm import TradingFactory
 import insights.transforms as transforms
-import insights.plugins.database as database
-import insights.plugins.mobile as mobile
-import insights.plugins.messaging as msg
 
 
 class BuyAndHold(TradingFactory):
     '''
-    Buy every sids on the given day, regularly or always (start_day = -1), and
-    until the end
+    doc: Depending on the given parameters, this algorithm will buy every sids
+      once or at regular intervals.
+    parameters:
+      start_time: Unique "buy signal".
+        Ignored if equal or less than 0 [default 2]
+      rate: Regular "buy signal", ignored if -1 [default -1]
     '''
     def initialize(self, properties):
-        # Punctual buy signals, with -1 for always, 0 never
-        self.start_day = properties.get('start_day', 2)
+      # Punctual buy signals, except 0 means never
+        self.start_time = properties.get('start_time', 2)
         # regularly buy signals
         self.rate = properties.get('rate', -1)
 
-        if properties.get('interactive'):
-            self.use(msg.RedisProtocol(self.identity).check)
-        device = properties.get('notify')
-        if device:
-            self.use(mobile.AndroidPush(device).notify)
-        if properties.get('save'):
-            self.use(database.RethinkdbBackend(
-                table=self.identity, db='portfolios', reset=True)
-                .save_portfolio)
-
-        self.set_commission(commission.PerTrade(
-            cost=properties.get('commission', 2.5)))
+        # Interactive, mobile, hipchat, database and commission middlewares
+        self.use_default_middlewares(properties)
 
     def _check_rate(self):
         return (self.rate > 0) and (self.days % self.rate == 0)
@@ -55,8 +39,7 @@ class BuyAndHold(TradingFactory):
         signals = {'buy': {}, 'sell': {}}
 
         # One shot or always buying or regularly
-        if self.days == self.start_day \
-                or self.start_day < 0 \
+        if self.days == self.start_time \
                 or self._check_rate():
             # Only cares about buying everything
             signals['buy'] = data
@@ -66,22 +49,14 @@ class BuyAndHold(TradingFactory):
 
 class Random(TradingFactory):
     '''
-    Randomly choose to buy or sell
+    doc: Randomly choose for each sid to buy, sell or pass
+    parameters:
+      buy_trigger: Chances to buy [default 0.5 < x < 1]
+      sell_trigger: Chances to sell [default 0 < x < 0.5]
     '''
     def initialize(self, properties):
 
-        if properties.get('interactive'):
-            self.use(msg.RedisProtocol(self.identity).check)
-        device = properties.get('notify')
-        if device:
-            self.use(mobile.AndroidPush(device).notify)
-        if properties.get('save'):
-            self.use(database.RethinkdbBackend(
-                table=self.identity, db='portfolios', reset=True)
-                .save_portfolio)
-
-        self.set_commission(commission.PerTrade(
-            cost=properties.get('commission', 2.5)))
+        self.use_default_middlewares(properties)
 
         self.buy_trigger = properties.get(
             'buy_trigger', random.randint(500, 1000) / 1000.0)
@@ -104,34 +79,27 @@ class Random(TradingFactory):
         return signals
 
 
+# TODO Merge with buyandhold
 # https://www.quantopian.com/posts/global-minimum-variance-portfolio?c=1
 class RegularRebalance(TradingFactory):
     '''
-    Reconsidere the portfolio allocation every <refresh_period> periods,
-    providing to the portfolio strategy <window_length> days of quote data.
+    doc: Reconsidere the portfolio allocation regularly, providing to the
+      portfolio strategy a moving window of quotes data.
+    parameters:
+      rate: Reallocation period [default 10]
+      window: quotes window tracked [default 40]
     '''
 
     def initialize(self, properties):
 
-        if properties.get('interactive'):
-            self.use(msg.RedisProtocol(self.identity).check)
-        device = properties.get('notify')
-        if device:
-            self.use(mobile.AndroidPush(device).notify)
-        if properties.get('save'):
-            self.use(database.RethinkdbBackend(
-                table=self.identity, db='portfolios', reset=True)
-                .save_portfolio)
+        self.use_default_middlewares(properties)
 
         # Set Max and Min positions in security
         self.max_notional = 1000000.1
         self.min_notional = -1000000.0
 
-        self.set_commission(commission.PerTrade(
-            cost=properties.get('commission', 2.5)))
-
         # This is the lookback window that the entire algorithm depends on
-        self.refresh_period = properties.get('refresh', 10)
+        self.refresh_period = properties.get('rate', 10)
         self.returns_transform = transforms.get_past_returns(
             refresh_period=self.refresh_period,
             window_length=properties.get('window', 40),
@@ -144,7 +112,7 @@ class RegularRebalance(TradingFactory):
         daily_returns = self.returns_transform.handle_data(data)
 
         #circuit breaker in case transform returns none
-        #circuit breaker, only calculate every 10 days
+        #circuit breaker, only calculate every given rate
         if (daily_returns is None) or \
                 (self.days % self.refresh_period is not 0):
             return signals

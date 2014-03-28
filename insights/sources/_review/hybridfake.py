@@ -17,7 +17,10 @@ from insights.sources.live.fake import FakeLiveSource
 from intuition.api.data_source import HybridDataFactory
 
 
-def remove_extention(sid):
+def clean_name(sid):
+    # Remove forex forbidden character
+    sid = sid.replace('/', '')
+    # Remove market related extension
     dot_pos = sid.find('.')
     return sid[:dot_pos] if dot_pos > 0 else sid
 
@@ -26,21 +29,20 @@ class RandomPrices(HybridDataFactory):
     ''' Get quotes from Rethinkdb database for backtest,  and generate random
     ones for live trading '''
 
-    select = 'close'
-
     def initialize(self, data_descriptor, **kwargs):
+        self.backtest = RethinkdbPrices(data_descriptor)
+        self.live = FakeLiveSource()
+
         if self.sids[0] == 'random':
             # --universe random[,4]
             count = int(self.sids[1]) if (len(self.sids) == 2) else 10
-            self.sids = self.db.random_tables(count)
+            self.sids = self.backtest.db.random_tables(count)
         else:
-            self.sids = map(remove_extention, self.sids)
-
-        self.live = FakeLiveSource()
-        self.backtest = RethinkdbPrices(data_descriptor)
+            self.sids = map(clean_name, self.sids)
 
     def backtest_data(self):
-        data = self.backtest.get_data(self.sids, self.start, self.end)
+        data = self.backtest.get_data(
+            self.sids, self.start, self.end, select='rate')
         # Unknown data were poped from dataframe
         self.sids = data.columns
         return data

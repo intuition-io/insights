@@ -17,12 +17,12 @@
 import sys
 import argparse
 from clint.textui import puts, colored, indent
-from datetime import datetime
-
+import pytz
+import datetime as dt
 import dna.debug
 from insights.plugins.database import RethinkdbBackend
-import intuition.data.utils as datautils
 import intuition.utils
+import intuition.data.universe as universe
 from intuition.data.quandl import DataQuandl
 import intuition.data.ystockquote as ystockquote
 
@@ -46,7 +46,7 @@ def parse_cli():
                         action='store', default='2011-01-01',
                         help='start date for quotes')
     parser.add_argument('-e', '--end',
-                        action='store', default=datetime.today(),
+                        action='store', default=dt.date.today(),
                         help='end date for quotes')
     parser.add_argument('-b', '--backend',
                         action='store', default='rethinkdb',
@@ -87,61 +87,72 @@ def fill_stock_metadata(sid):
     return metadata
 
 
-def store(data, backend):
-    msg('using {} backend for storage'.format(backend))
-    db = RethinkdbBackend(db='quotes')
-    #TODO remove .pa and indicate markets
-    for sid in data:
-        # Rethinkdb doesn't accept '.' in table names
-        dot_position = sid.find('.')
-        if dot_position > 0:
-            symbol = sid[:dot_position].lower()
-        else:
-            symbol = sid.lower()
+def store(backend, sid, data, reset=True):
+    #if sid.find('/') < 0:
+        # name, exchange, index, sector, industry
+        #msg('searching for {} metadata'.format(sid))
+        #fill_stock_metadata(sid)
 
-        try:
-            # name, exchange, index, sector, industry
-            msg('searching for {} metadata'.format(sid))
-            metadata = fill_stock_metadata(sid)
-            msg('saving {} in database'.format(sid))
-            if not data[sid].isnull().any().any():
-                db.save_quotes(symbol, data[sid], metadata, reset=True)
-        except Exception as error:
-            print(error)
-            continue
-    msg('done')
+    if not data.isnull().any().any():
+        msg('saving {} in database'.format(sid))
+        backend.save_quotes(sid, data, {}, reset=reset)
+    else:
+        warning('{}: empty dataset'.format(sid))
 
 
 def main():
     args = parse_cli()
 
-    sids = datautils.smart_selector(args.universe)
-
-    start = intuition.utils.normalize_date_format(args.start)
-    if isinstance(args.end, str):
-        end = intuition.utils.normalize_date_format(args.end)
-    else:
-        end = args.end
+    # FIXME sids = datautils.smart_selector(args.universe)
+    market = universe.Market()
+    market.parse_universe_description(args.universe)
+    sids = market.sids
 
     msg('- Intuition database manager')
+    warning('Currently, only supports cac40 and forex symbols', 4)
 
-    #TODO sync (i.e. start = detect_db(), end = now())
+    msg('using {} backend for storage'.format(args.backend))
+    db = RethinkdbBackend(db='quotes')
+
+    feed = DataQuandl()
 
     #TODO Fetch more informations
     if args.command == 'dl':
-        warning('currently only supports nasdaq symbols', 4)
-        msg('downloading {} data ({} -> {})'.format(sids, start, end), 4)
-        feed = DataQuandl()
-        data = feed.fetch(
-            sids, start_date=start, end_date=end, returns='pandas')
-        msg('done')
-
-        store(data, args.backend)
+        start = intuition.utils.normalize_date_format(args.start)
+        if isinstance(args.end, str):
+            end = intuition.utils.normalize_date_format(args.end)
+        else:
+            end = args.end
+        reset = True
 
     elif args.command == 'sync':
-        raise NotImplementedError('yet ...')
+        # TODO Per quote sync
+        younger_date = dt.datetime(2020, 1, 1, tzinfo=pytz.utc)
+        for sid in sids:
+            last_entry = db.last_chrono_entry(sid)
+            if last_entry['date'] < younger_date:
+                younger_date = last_entry['date']
+
+        start = younger_date + dt.timedelta(1)
+        end = dt.date.today()
+        reset = False
+
     else:
         raise ValueError('unknown command: {}'.format(args.command))
+
+    # FIXME Quandl will fetch about 10 sids max
+    msg('downloading {} data ({} -> {})'.format(sids, start, end), 4)
+    data = feed.fetch(
+        sids, start=start, end=end, returns='pandas')
+    msg('done')
+
+    for sid in data:
+        try:
+            store(backend=db, sid=sid, data=data[sid], reset=reset)
+        except Exception as error:
+            print(error)
+            continue
+    msg('done')
 
 
 if __name__ == '__main__':

@@ -44,3 +44,5 @@ nosetests.xml
 # Not ready
 optimization/*
 authtoken.p
+R/reports
+etcd-setup.sh

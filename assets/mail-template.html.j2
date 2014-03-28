@@ -1,0 +1,195 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="initial-scale=1.0"> <!-- So that mobile webkit will display zoomed in -->
+  <meta name="format-detection" content="telephone=no"> <!-- disable auto telephone linking in iOS -->
+  <title>Intuition Notification</title>
+  <style type="text/css">
+
+    /* Force Hotmail to display emails at full width */
+    .ReadMsgBody {
+      width: 100%;
+      background-color: #eeeeee;
+    }
+
+    /* Force Hotmail to display emails at full width */
+    .ExternalClass {
+      width: 100%;
+      background-color: #eeeeee;
+    }
+
+    /* Forces Hotmail to display normal line spacing. */
+    .ExternalClass,
+    .ExternalClass p,
+    .ExternalClass span,
+    .ExternalClass font,
+    .ExternalClass td,
+    .ExternalClass div {
+      line-height:100%;
+    }
+
+    /* Resolves webkit padding issue. */
+    table {
+      border-spacing:0;
+    }
+
+    /* Resolves the Outlook 2007, 2010, and Gmail td padding issue. */
+    table td {
+      border-collapse:collapse;
+    }
+
+    /* Yahoo auto-sensing link color and border */
+    .yshortcuts a {
+      border-bottom: none !important;
+    }
+
+    /* Apple Mail doesn't supper max-width, so we use media queries to constrain the email width. */
+    @media only screen and (min-device-width: 601px) {
+      .content {
+        width: 600px !important;
+      }
+    }
+
+  </style>
+</head>
+<body bgcolor="#f4f4f4" leftmargin="0" topmargin="0" marginwidth="0" marginheight="0" style="margin:0; padding:0;-webkit-text-size-adjust:none; -ms-text-size-adjust:none;background: #f4f4f4;">
+<table cellpadding="0" cellspacing="0" border="0" height="100%" width="100%" bgcolor="#f4f4f4" style="background: #f4f4f4;"><tr><td>
+
+  <!-- Outlook and Lotus Notes don't support max-width but are always on desktop, so we can enforce a wide, fixed width view. -->
+  <!-- Beginning of Outlook-specific wrapper : BEGIN -->
+  <!--[if (gte mso 9)|(IE)]>
+  <table width="600" align="center" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td>
+  <![endif]-->
+  <!-- Beginning of Outlook-specific wrapper : END -->
+
+  <!-- Email wrapper : BEGIN -->
+  <table border="0" width="100%" cellpadding="0" cellspacing="0" align="center" style="max-width: 600px;margin: auto;" class="email-wrapper">
+    <tr>
+      <td>
+
+        <!-- Logo Left, Nav Right : BEGIN -->
+        <table border="0" width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td height="40" style="font-size: 0; line-height: 0;">&nbsp;</td>
+          </tr>
+          <tr>
+            <td valign="middle" style="padding-left: 30px;text-align: left;">
+              <img src="http://placehold.it/200x40/888888/7777777" alt="alt text" height="40" width="200" border="0" style="display: block;">
+            </td>
+            <td valign="middle" style="padding-right: 40px;text-align: right;">
+              <a href="http://188.226.223.212/" style="color: #888888;font-family: sans-serif;white-space: nowrap;">intuition.io</a>
+            </td>
+          </tr>
+          <tr>
+            <td height="40" style="font-size: 0; line-height: 0;">&nbsp;</td>
+          </tr>
+        </table>
+        <!-- Logo Left, Nav Right : END -->
+
+        <table border="0" width="100%" cellpadding="0" cellspacing="0" style="background: #ffffff;">
+
+          <!-- Single Fluid Image, No Crop : BEGIN -->
+          <tr>
+            <td valign="middle" align="center">
+              <img src="http://placehold.it/400x200/888888/7777777" alt="alt text" height="200" width="400" align="center" border="0" style="padding-top: 40px; height: auto;margin: auto;display: block;">
+            </td>
+          </tr>
+          <!-- Single Fluid Image, No Crop : END -->
+
+          <!-- Full Width, Fluid Column : BEGIN -->
+          <tr>
+            <td style="padding: 40px; font-family: sans-serif; font-size: 20px; line-height: 27px; color: #666666;">
+              Hi, {{ strategy_name }} bot triggered some opportunities based on your trading strategy.
+              <br><br>
+              Details below.
+              <ul>
+                {% for opportunity in suggestions %}
+                  <li>{{ opportunity.action }} {{opportunity.quantity}} of {{ opportunity.equity }}
+                {% endfor %}
+              </ul>
+              <br>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 40px; background: #f4f4f4; font-family: sans-serif; font-size: 20px; line-height: 27px; color: #666666;">
+              Attachment you received provides more informations about the suggested investments, please considere to check it out.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <!-- 1 x 2 grid : BEGIN -->
+              <table border="0" width="100%" cellpadding="0" cellspacing="0" align="center">
+                <tr>
+                  <td valign="top" width="50%" style="padding: 40px 20px; font-family: sans-serif; font-size: 18px; line-height: 24px; color: #666666; text-align: center;">
+                    <img src="http://placehold.it/150x150/888888/7777777" alt="alt text" height="150" width="150" border="0" align="center">
+                    <br><br>
+                    Hack the market.
+                    <br><br>
+                    <!-- Bulletproof Button : BEGIN -->
+                    <!-- Modified code from http://buttons.cm -->
+                    <div>
+                      <!--[if mso]>
+                      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="http://www.google.com" style="height:40px;v-text-anchor:middle;width:200px;" arcsize="10%" strokecolor="#444444" fillcolor="#444444">
+                        <w:anchorlock/>
+                        <center style="color:#ffffff;font-family:sans-serif;font-size:13px;font-weight:bold;">Bulletproof Button</center>
+                      </v:roundrect>
+                      <![endif]-->
+                      <a href="http://188.226.223.212/" style="background-color:#444444;border:1px solid #444444;border-radius:4px;color:#ffffff;display:inline-block;font-family:sans-serif;font-size:13px;font-weight:bold;line-height:40px;text-align:center;text-decoration:none;width:200px;-webkit-text-size-adjust:none;mso-hide:all;">Signin</a>
+                    </div>
+                    <!-- Bulletproof Button : END -->
+                  </td>
+                  <td valign="top" width="50%" style="padding: 40px 20px; font-family: sans-serif; font-size: 18px; line-height: 24px; color: #666666; text-align: center;">
+                    <img src="http://placehold.it/150x150/888888/7777777" alt="alt text" height="150" width="150" border="0" align="center">
+                    <br><br>
+                    Code on github.
+                    <br><br>
+                    <!-- Bulletproof Button : BEGIN -->
+                    <!-- Modified code from http://buttons.cm -->
+                    <div>
+                      <!--[if mso]>
+                      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="http://www.google.com" style="height:40px;v-text-anchor:middle;width:200px;" arcsize="10%" strokecolor="#444444" fillcolor="#444444">
+                        <w:anchorlock/>
+                        <center style="color:#ffffff;font-family:sans-serif;font-size:13px;font-weight:bold;">Bulletproof Button</center>
+                      </v:roundrect>
+                      <![endif]-->
+                      <a href="http://github.com/hackliff/intuition" style="background-color:#444444;border:1px solid #444444;border-radius:4px;color:#ffffff;display:inline-block;font-family:sans-serif;font-size:13px;font-weight:bold;line-height:40px;text-align:center;text-decoration:none;width:200px;-webkit-text-size-adjust:none;mso-hide:all;">Contribute</a>
+                    </div>
+                    <!-- Bulletproof Button : END -->
+                  </td>
+                </tr>
+              </table>
+              <!-- 1 x 2 grid : END -->
+            </td>
+          </tr>
+          <!-- Full Width, Fluid Column : END -->
+
+        </table>
+      </td>
+    </tr>
+
+    <!-- Footer : BEGIN -->
+    <tr>
+      <td style="text-align: center;padding: 40px 0;font-family: sans-serif; font-size: 12px; line-height: 18px;color: #888888;">
+        If you no longer wish to receive these emails, you can <unsubscribe style="color: #444444; padding: 0;text-decoration: underline">unsubscribe</unsubscribe>.<br>
+        Hive Tech, Sas. &bull; 5 Camille Saint Saens Street, Plaisir, 78370 France &bull;<br><br>
+      </td>
+    </tr>
+    <!-- Footer : END -->
+
+  </table>
+  <!-- Email wrapper : END -->
+
+  <!-- End of Outlook-specific wrapper : BEGIN -->
+  <!--[if (gte mso 9)|(IE)]>
+      </td>
+    </tr>
+  </table>
+  <![endif]-->
+  <!-- End of Outlook-specific wrapper : END -->
+
+</td></tr></table>
+</body>
+</html>

@@ -1,32 +1,43 @@
-from zipline.transforms import MovingAverage
-import zipline.finance.commission as commission
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
 
+'''
+  Moving average based algorithms
+  -------------------------------
+
+  :copyright (c) 2014 Xavier Bruhiere.
+  :license: Apache 2.0, see LICENSE for more details.
+'''
+
+from zipline.transforms import MovingAverage
+#import insights.plugins.mail as mail
 from intuition.api.algorithm import TradingFactory
-import insights.plugins.database as database
-import insights.plugins.mobile as mobile
-import insights.plugins.messaging as msg
 
 
 class DualMovingAverage(TradingFactory):
     '''
-    Buys once its short moving average crosses its long moving average
-    (indicating upwards momentum) and sells its shares once the averages cross
-    again (indicating downwards momentum).
+    doc: Buys once its short moving average crosses its long moving average
+      (indicating upwards momentum) and sells its shares once the averages
+      cross again (indicating downwards momentum).
+    parameters:
+      long_window: Long window of data to track for moving average computation.
+        [default 30]
+      short_window: Short window of data to track for moving average
+        computation. [default 0.5*long_window]
+      short_rate: Alternative to short_window parameter.
+        Set short window length as a fraction of the long one. [default 0.5]
+      threshold: Distance between moving averages to trigger signal [default 0]
     '''
     def initialize(self, properties):
-        if properties.get('interactive'):
-            self.use(msg.RedisProtocol(self.identity).check)
-        device = properties.get('notify')
-        if device:
-            self.use(mobile.AndroidPush(device).notify)
-        if properties.get('save'):
-            self.use(database.RethinkdbBackend(
-                table=self.identity, db='portfolios', reset=True)
-                .save_portfolio)
+        # Interactive, mobile, hipchat, database and commission middlewares
+        self.use_default_middlewares(properties)
+        #report_mails = properties.get('reports')
+        #if report_mails:
+            #self.use(mail.Report(report_mails).send_briefing)
 
-        long_window = properties.get('long_window', 30)
-        short_window = properties.get('short_window', None)
-        if short_window is None:
+        long_window = int(properties.get('long_window', 30))
+        short_window = int(properties.get('short_window', 0))
+        if not short_window:
             short_window = int(round(
                 properties.get('ma_rate', 0.5) * float(long_window), 2))
         self.threshold = properties.get('threshold', 0)
@@ -39,22 +50,16 @@ class DualMovingAverage(TradingFactory):
 
         # To keep track of whether we invested in the stock or not
         self.invested = {}
-
         self.short_mavgs = []
         self.long_mavgs = []
 
-        self.set_commission(commission.PerTrade(
-            cost=properties.get('commission', 2.5)))
-
     def warm(self, data):
-        for sid in data:
-            self.invested[sid] = False
+        self.invested = {sid: False for sid in data}
 
     def event(self, data):
         signals = {'buy': {}, 'sell': {}}
 
         for ticker in data:
-
             short_mavg = data[ticker].short_mavg['price']
             long_mavg = data[ticker].long_mavg['price']
 
@@ -72,19 +77,12 @@ class DualMovingAverage(TradingFactory):
 
 
 # https://www.quantopian.com/posts/this-is-amazing
+'''
 class Momentum(TradingFactory):
     #FIXME Too much transactions, can't handle it on wide universe
-
     def initialize(self, properties):
-        if properties.get('interactive'):
-            self.use(msg.RedisProtocol(self.identity).check)
-        device = properties.get('notify')
-        if device:
-            self.use(mobile.AndroidPush(device).notify)
-        if properties.get('save'):
-            self.use(database.RethinkdbBackend(
-                table=self.identity, db='portfolios', reset=True)
-                .save_portfolio)
+        # Interactive, mobile, hipchat, database and commission middlewares
+        self.use_default_middlewares(properties)
 
         self.max_notional = 2000.1
         self.min_notional = -2000.0
@@ -94,9 +92,6 @@ class Momentum(TradingFactory):
 
         self.add_transform(MovingAverage, 'mavg', ['price'],
                            window_length=properties.get('window', 3))
-
-        self.set_commission(commission.PerTrade(
-            cost=properties.get('commission', 2.5)))
 
     def event(self, data):
         signals = {'buy': {}, 'sell': {}}
@@ -116,3 +111,4 @@ class Momentum(TradingFactory):
                 signals['buy'][ticker] = data[ticker]
 
         return signals
+'''

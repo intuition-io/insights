@@ -6,47 +6,35 @@ API
 ---
 
 ```python
-from intuition.zipline.data_source import DataFactory
-
-log = logbook.Logger('intuition.source.backtest|live.name')
-
-class MySource(DataFactory):
+class MyBacktestSource(object):
   '''
   Data sources yield events, processed by the algorithms, from a data descriptor
   providing dates, trading universe (i.e. tickers, market, random, ...) and
   custom parameters.
-
-  The class provides the following attributes :
-    - self.sids - list of strings representing simulated internal sids
-                  It can be an explicit list of symbols, or a universe like nyse,20
-                  (that will pick up 20 random symbols from nyse exchange)
-    - self.index - pandas.tseries.index.DatetimeIndex
-    - self.start - self.index[0]
-    - self.end - self.index[-1]
   '''
 
-  def initialize(data_descriptor, **kwargs):
+  def __init__(self, sids, properties):
     '''
-    Like with the other modules, ran once before trading. The data_descriptor
-    holds dates index, the market universe as given by '--universe' and
-    additional parameters the user wrote int the configuration under the 'data'
-    key.
+    Intuition parsed user input and provides the sids it wants to trade on.
+    Properties holds user configuration and specific market scheme.
     '''
+    pass
 
   def get_data(self):
     '''
     Returns a pandas.DataFrame or pandas.Panel used as trading events.
     DataFactory can process the following schemes
 
-          | goog | aapl              | open | high | volume
-    -------------------   or   ----------------------------
-    14/03 | 34.5 | 345         14/03 | 34.3 | 37.8 | 120056
-    15/03 | 34.9 | 344         15/03 | 36.3 | 36.9 | 103565
+          | goog | aapl                 | open | high | volume
+    ------------------- ...  or   ---------------------------- ...
+    14/03 | 34.5 | 345            14/03 | 34.3 | 37.8 | 120056
+    15/03 | 34.9 | 344            15/03 | 36.3 | 36.9 | 103565
 
+              or
 
       aapl / ..  /  ..  /  ..
      goog / ..  /  ..  /  ..
-    -----| open | high | close
+    -----| open | high | close ...
     14/03| ____ | ____ | _____
     15/03|      |      |
     '''

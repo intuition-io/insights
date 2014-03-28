@@ -19,13 +19,13 @@ import sys
 import copy
 import pytz
 import random
-import logbook
 from clint.textui import progress
 import pandas as pd
 
 import rethinkdb as rdb
 from influxdb import client as influxdb
 
+import dna.logging
 import intuition.utils
 
 
@@ -40,10 +40,10 @@ DB_CONFIG = {
 }
 
 
-log = logbook.Logger('intuition.plugins.database')
+log = dna.logging.logger(__name__)
 
 
-def _to_dict(portfolio):
+def _portfolio_to_dict(portfolio):
     json_pf = portfolio.__dict__
     if json_pf['positions']:
         for sid, infos in portfolio.positions.iteritems():
@@ -51,11 +51,27 @@ def _to_dict(portfolio):
     return json_pf
 
 
+def insert_char(string, char, pos):
+    return char.join([string[:pos], string[pos:]])
+
+
+def _clean_sid(sid):
+    sid = str(sid).lower()
+    # Remove market extension
+    dot_pos = sid.find('.')
+    sid = sid[:dot_pos] if dot_pos > 0 else sid
+    # Remove forex slash
+    return sid.replace('/', '')
+
+
 #TODO Store TradingAlgo.recorded_vars
 class RethinkdbBackend():
     '''
     Adds RethinkDB database backend to the portfolio
     '''
+    # Temporary for daily return computation
+    _last_price = None
+
     def __init__(self, **kwargs):
         host = kwargs.get('host', DB_CONFIG['host'])
         port = kwargs.get('port', DB_CONFIG['port'])
@@ -93,30 +109,30 @@ class RethinkdbBackend():
         Store in Rethinkdb a zipline.Portfolio object
         '''
         if perf_tracker.progress != 0.0 and self.table:
-            log.info('Saving portfolio in database')
+            # NOTE Use zipline perf tracker ?
+            if self._last_price:
+                daily_return = ((portfolio.portfolio_value - self._last_price)
+                                / self._last_price) * 100
+            else:
+                daily_return = 0.0
+
+            log.debug('Saving portfolio in database')
             result = rdb.table(self.table).insert(
                 {'date': datetime,
                  'cmr': perf_tracker.cumulative_risk_metrics.to_dict(),
-                 'portfolio': _to_dict(
+                 'extras': {'daily_return': daily_return},
+                 'portfolio': _portfolio_to_dict(
                      copy.deepcopy(portfolio))}).run(self.session)
             log.debug(result)
 
-    def save_metrics(self, datetime, perf_tracker):
-        '''
-        Stores in database zipline.perf_tracker.cumulative_risk_metrics
-        '''
-        if perf_tracker.progress != 0.0 and self.table:
-            log.info('Saving cummulative metrics in database')
-            result = rdb.table(self.table).insert(
-                {'date': datetime,
-                 'cmr': perf_tracker.cumulative_risk_metrics.to_dict()
-                 }).run(self.session)
-            log.debug(result)
+        self._last_price = portfolio.portfolio_value
 
     def save_quotes(self, table, data, metadata={}, reset=False):
+        table = _clean_sid(table)
         if reset:
             self._reset_data(table)
-        data.columns = map(lambda x: x.replace(' ', '_').lower(), data.columns)
+        #data.columns = map(
+        #   lambda x: x.replace(' ', '_').lower(), data.columns)
         length = len(data)
         for dt, row in progress.bar(data.iterrows(), expected_size=length):
             record = row.to_dict()
@@ -125,24 +141,37 @@ class RethinkdbBackend():
             report = rdb.table(table).insert(record).run(self.session)
             assert not report['errors']
 
+    def available(self, table):
+        # TODO Check with dates
+        return _clean_sid(table) in rdb.table_list().run(self.session)
+
     def _load_quotes(self, sids, start, end, select):
-        is_panel = (len(select) > 2)
-        select.append('date')
+        is_panel = not len(select) == 1
         data = {}
         for table in sids:
-            if table not in rdb.table_list().run(self.session):
+            if not self.available(table):
                 log.warning('{} not found in database, skipping'
                             .format(table))
                 continue
 
-            cursor_data = rdb.table(table)\
-                .filter(lambda row: row['date'].during(
-                        start, end))\
-                .pluck(select)\
-                .run(self.session)
-            data[table] = {}
+            if select:
+                select.append('date')
+                cursor_data = rdb.table(_clean_sid(table))\
+                    .filter(lambda row: row['date'].during(
+                            start, end))\
+                    .pluck(select)\
+                    .run(self.session)
+            else:
+                # TODO pop 'id' field
+                cursor_data = rdb.table(_clean_sid(table))\
+                    .filter(lambda row: row['date'].during(
+                            start, end))\
+                    .run(self.session)
 
+            data[table] = {}
             for row in cursor_data:
+                # Remove rethinkdb automatic id
+                row.pop('id', None)
                 # tzinfo of the object is rethinkdb specific
                 date = row.pop('date').astimezone(pytz.utc)
                 #date = intuition.utils.normalize_date_format(
@@ -150,15 +179,15 @@ class RethinkdbBackend():
                 data[table][date] = row if is_panel else row[select[0]]
 
         if is_panel:
+            # FIXME Missing data
             data = {k: v for k, v in data.iteritems() if len(v) > 0}
             data = pd.Panel(data).transpose(0, 2, 1)
         else:
-            data = pd.DataFrame(data).dropna(axis=1, how='any')
+            data = pd.DataFrame(data).fillna(method='pad')
         return data
 
-    def quotes(self, sids, start=None, end=None, select='close'):
-        #TODO Fallback to 'close' if 'adjusted_close' not available
-        sids = map(str.lower, map(str, sids))
+    def quotes(self, sids, start=None, end=None, select=[]):
+        #sids = map(str.lower, map(str, sids))
         if start:
             start = rdb.epoch_time(intuition.utils.UTC_date_to_epoch(start))
         if end:
@@ -169,7 +198,7 @@ class RethinkdbBackend():
         if select == 'ohlc':
             #TODO Handle 'adjusted_close'
             select = ['open', 'high', 'low', 'close', 'volume']
-        if isinstance(select, str):
+        if not isinstance(select, list):
             select = [select]
 
         return self._load_quotes(sids, start, end, select)
@@ -179,6 +208,13 @@ class RethinkdbBackend():
         tables = rdb.table_list().run(self.session)
         random.shuffle(tables)
         return map(str, tables[:n])
+
+    def last_chrono_entry(self, table):
+        return rdb.table(_clean_sid(table))\
+            .order_by(rdb.desc('date'))\
+            .limit(1)\
+            .pluck(['date'])\
+            .run(self.session)[0]
 
     def load_portfolio(self, name):
         '''
@@ -210,8 +246,8 @@ class InfluxdbBackend():
         '''
         Store in Rethinkdb a zipline.Portfolio object
         '''
-        log.info('Saving portfolio in database')
-        pf = _to_dict(copy.deepcopy(portfolio))
+        log.debug('Saving portfolio in database')
+        pf = _portfolio_to_dict(copy.deepcopy(portfolio))
         pf.pop('positions')
         data = [{
             "name": self.name,
