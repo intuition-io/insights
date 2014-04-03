@@ -55,6 +55,7 @@ def insert_char(string, char, pos):
     return char.join([string[:pos], string[pos:]])
 
 
+# TODO Make it a decorator
 def _clean_sid(sid):
     sid = str(sid).lower()
     # Remove market extension
@@ -65,12 +66,8 @@ def _clean_sid(sid):
 
 
 #TODO Store TradingAlgo.recorded_vars
-class RethinkdbBackend():
-    '''
-    Adds RethinkDB database backend to the portfolio
-    '''
-    # Temporary for daily return computation
-    _last_price = None
+class RethinkdbBackend(object):
+    ''' Higher level of rethinkdb management '''
 
     def __init__(self, **kwargs):
         host = kwargs.get('host', DB_CONFIG['host'])
@@ -104,6 +101,36 @@ class RethinkdbBackend():
     def _connection(self, host, port, db):
         return rdb.connect(host=host, port=port, db=db)
 
+    def available(self, table):
+        # TODO Check with dates
+        return _clean_sid(table) in rdb.table_list().run(self.session)
+
+    def random_tables(self, n=1000):
+        log.info('generating random list of {} tables'.format(n))
+        tables = rdb.table_list().run(self.session)
+        random.shuffle(tables)
+        return map(str, tables[:n])
+
+    def last_chrono_entry(self, table):
+        return rdb.table(_clean_sid(table))\
+            .order_by(rdb.desc('date'))\
+            .limit(1)\
+            .pluck(['date'])\
+            .run(self.session)[0]
+
+    #def __del__(self):
+        #FIXME RqlClientError(u'MALFORMED PROTOBUF (missing field
+        #`type`):\ntoken: 508\n1: 4\n5: 1\n')
+        #self.session.close()
+
+
+class RethinkdbFinance(RethinkdbBackend):
+    '''
+    Adds RethinkDB database backend to the portfolio
+    '''
+    # Temporary for daily return computation
+    _last_price = None
+
     def save_portfolio(self, datetime, portfolio, perf_tracker):
         '''
         Store in Rethinkdb a zipline.Portfolio object
@@ -131,8 +158,6 @@ class RethinkdbBackend():
         table = _clean_sid(table)
         if reset:
             self._reset_data(table)
-        #data.columns = map(
-        #   lambda x: x.replace(' ', '_').lower(), data.columns)
         length = len(data)
         for dt, row in progress.bar(data.iterrows(), expected_size=length):
             record = row.to_dict()
@@ -140,10 +165,6 @@ class RethinkdbBackend():
             record.update(metadata)
             report = rdb.table(table).insert(record).run(self.session)
             assert not report['errors']
-
-    def available(self, table):
-        # TODO Check with dates
-        return _clean_sid(table) in rdb.table_list().run(self.session)
 
     def _load_quotes(self, sids, start, end, select):
         is_panel = not len(select) == 1
@@ -202,30 +223,6 @@ class RethinkdbBackend():
             select = [select]
 
         return self._load_quotes(sids, start, end, select)
-
-    def random_tables(self, n=1000):
-        log.info('generating random list of {} tables'.format(n))
-        tables = rdb.table_list().run(self.session)
-        random.shuffle(tables)
-        return map(str, tables[:n])
-
-    def last_chrono_entry(self, table):
-        return rdb.table(_clean_sid(table))\
-            .order_by(rdb.desc('date'))\
-            .limit(1)\
-            .pluck(['date'])\
-            .run(self.session)[0]
-
-    def load_portfolio(self, name):
-        '''
-        Build zipline.Portfolio object from <name> stored in database
-        '''
-        pass
-
-    #def __del__(self):
-        #FIXME RqlClientError(u'MALFORMED PROTOBUF (missing field
-        #`type`):\ntoken: 508\n1: 4\n5: 1\n')
-        #self.session.close()
 
 
 class InfluxdbBackend():

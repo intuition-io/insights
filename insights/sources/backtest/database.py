@@ -11,7 +11,7 @@
 
 import pandas as pd
 import copy
-from insights.plugins.database import RethinkdbBackend
+from insights.plugins.database import RethinkdbFinance
 from intuition.data.quandl import DataQuandl
 
 
@@ -39,7 +39,7 @@ class AugmentedRethinkdb(object):
         select = properties.get('select')
         self._select = [select] if select else []
 
-        self.db = RethinkdbBackend(db=properties.get('db', 'quotes'))
+        self.db = RethinkdbFinance(db=properties.get('db', 'quotes'))
         self.quandl = DataQuandl()
 
         # TODO Check with dates

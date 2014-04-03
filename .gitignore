@@ -46,3 +46,4 @@ optimization/*
 authtoken.p
 R/reports
 etcd-setup.sh
+bkp.README.md

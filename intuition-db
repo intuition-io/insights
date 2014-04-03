@@ -20,9 +20,9 @@ from clint.textui import puts, colored, indent
 import pytz
 import datetime as dt
 import dna.debug
-from insights.plugins.database import RethinkdbBackend
 import intuition.utils
 import intuition.data.universe as universe
+from insights.plugins.database import RethinkdbFinance
 from intuition.data.quandl import DataQuandl
 import intuition.data.ystockquote as ystockquote
 
@@ -88,11 +88,6 @@ def fill_stock_metadata(sid):
 
 
 def store(backend, sid, data, reset=True):
-    #if sid.find('/') < 0:
-        # name, exchange, index, sector, industry
-        #msg('searching for {} metadata'.format(sid))
-        #fill_stock_metadata(sid)
-
     if not data.isnull().any().any():
         msg('saving {} in database'.format(sid))
         backend.save_quotes(sid, data, {}, reset=reset)
@@ -101,18 +96,17 @@ def store(backend, sid, data, reset=True):
 
 
 def main():
+    msg('- Intuition database manager')
+    warning('Currently, only supports cac40 and forex symbols', 4)
+
     args = parse_cli()
 
-    # FIXME sids = datautils.smart_selector(args.universe)
     market = universe.Market()
     market.parse_universe_description(args.universe)
     sids = market.sids
 
-    msg('- Intuition database manager')
-    warning('Currently, only supports cac40 and forex symbols', 4)
-
     msg('using {} backend for storage'.format(args.backend))
-    db = RethinkdbBackend(db='quotes')
+    db = RethinkdbFinance(db='quotes')
 
     feed = DataQuandl()
 

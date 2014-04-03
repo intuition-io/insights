@@ -19,7 +19,7 @@ import time
 import codecs
 import requests
 import jinja2
-import intuition.analysis as analysis
+import insights.analysis as analysis
 import dna.logging
 
 log = dna.logging.logger(__name__)
