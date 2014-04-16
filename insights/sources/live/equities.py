@@ -18,7 +18,7 @@ class Stocks(object):
     generates random prices
     '''
     def __init__(self, sids, properties):
-        self.feed = remote.Data()
+        pass
 
     @property
     def mapping(self):
@@ -31,9 +31,8 @@ class Stocks(object):
         }
 
     def get_data(self, sids):
-        # FIXME No volumen information with this method
-        snapshot = self.feed.fetch_equities_snapshot(
-            symbols=sids, level=1)
+        # FIXME No volume information with this method
+        snapshot = remote.snapshot_google(symbols=sids)
 
         if snapshot.empty:
             raise ValueError('no equities data available')

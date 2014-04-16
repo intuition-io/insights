@@ -26,7 +26,8 @@ import rethinkdb as rdb
 from influxdb import client as influxdb
 
 import dna.logging
-import intuition.utils
+import dna.time_utils
+import intuition.data.utils as datautils
 
 
 # We will use these settings later in the code to
@@ -53,16 +54,6 @@ def _portfolio_to_dict(portfolio):
 
 def insert_char(string, char, pos):
     return char.join([string[:pos], string[pos:]])
-
-
-# TODO Make it a decorator
-def _clean_sid(sid):
-    sid = str(sid).lower()
-    # Remove market extension
-    dot_pos = sid.find('.')
-    sid = sid[:dot_pos] if dot_pos > 0 else sid
-    # Remove forex slash
-    return sid.replace('/', '')
 
 
 #TODO Store TradingAlgo.recorded_vars
@@ -103,7 +94,7 @@ class RethinkdbBackend(object):
 
     def available(self, table):
         # TODO Check with dates
-        return _clean_sid(table) in rdb.table_list().run(self.session)
+        return datautils.clean_sid(table) in rdb.table_list().run(self.session)
 
     def random_tables(self, n=1000):
         log.info('generating random list of {} tables'.format(n))
@@ -112,7 +103,7 @@ class RethinkdbBackend(object):
         return map(str, tables[:n])
 
     def last_chrono_entry(self, table):
-        return rdb.table(_clean_sid(table))\
+        return rdb.table(datautils.clean_sid(table))\
             .order_by(rdb.desc('date'))\
             .limit(1)\
             .pluck(['date'])\
@@ -155,7 +146,7 @@ class RethinkdbFinance(RethinkdbBackend):
         self._last_price = portfolio.portfolio_value
 
     def save_quotes(self, table, data, metadata={}, reset=False):
-        table = _clean_sid(table)
+        table = datautils.clean_sid(table)
         if reset:
             self._reset_data(table)
         length = len(data)
@@ -177,14 +168,14 @@ class RethinkdbFinance(RethinkdbBackend):
 
             if select:
                 select.append('date')
-                cursor_data = rdb.table(_clean_sid(table))\
+                cursor_data = rdb.table(datautils.clean_sid(table))\
                     .filter(lambda row: row['date'].during(
                             start, end))\
                     .pluck(select)\
                     .run(self.session)
             else:
                 # TODO pop 'id' field
-                cursor_data = rdb.table(_clean_sid(table))\
+                cursor_data = rdb.table(datautils.clean_sid(table))\
                     .filter(lambda row: row['date'].during(
                             start, end))\
                     .run(self.session)
@@ -195,8 +186,6 @@ class RethinkdbFinance(RethinkdbBackend):
                 row.pop('id', None)
                 # tzinfo of the object is rethinkdb specific
                 date = row.pop('date').astimezone(pytz.utc)
-                #date = intuition.utils.normalize_date_format(
-                    #row.pop('date')['epoch_time'])
                 data[table][date] = row if is_panel else row[select[0]]
 
         if is_panel:
@@ -210,10 +199,10 @@ class RethinkdbFinance(RethinkdbBackend):
     def quotes(self, sids, start=None, end=None, select=[]):
         #sids = map(str.lower, map(str, sids))
         if start:
-            start = rdb.epoch_time(intuition.utils.UTC_date_to_epoch(start))
+            start = rdb.epoch_time(dna.time_utils.UTC_date_to_epoch(start))
         if end:
             #TODO Give a notice when given end is > database end
-            end = rdb.epoch_time(intuition.utils.UTC_date_to_epoch(end))
+            end = rdb.epoch_time(dna.time_utils.UTC_date_to_epoch(end))
         else:
             end = rdb.now()
         if select == 'ohlc':

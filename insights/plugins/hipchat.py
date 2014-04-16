@@ -77,5 +77,5 @@ class Bot(object):
                 '</li><li>'.join(
                     ['{}: {}'.format(sid, quantity)
                         for sid, quantity in orderbook.iteritems()])
-                )
+            )
             self.message(body, self.room_id, style='html')

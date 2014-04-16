@@ -20,7 +20,7 @@ from clint.textui import puts, colored, indent
 import pytz
 import datetime as dt
 import dna.debug
-import intuition.utils
+import dna.time_utils
 import intuition.data.universe as universe
 from insights.plugins.database import RethinkdbFinance
 from intuition.data.quandl import DataQuandl
@@ -112,9 +112,9 @@ def main():
 
     #TODO Fetch more informations
     if args.command == 'dl':
-        start = intuition.utils.normalize_date_format(args.start)
+        start = dna.time_utils.normalize_date_format(args.start)
         if isinstance(args.end, str):
-            end = intuition.utils.normalize_date_format(args.end)
+            end = dna.time_utils.normalize_date_format(args.end)
         else:
             end = args.end
         reset = True

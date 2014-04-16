@@ -3,14 +3,15 @@ python:
   - "2.7"
 
 before_install:
-  - sudo apt-get -y install python-pip python-dev g++ make libfreetype6-dev libpng-dev libopenblas-dev liblapack-dev gfortran r-base
+  - sudo apt-get -y install python-pip python-dev g++ make libfreetype6-dev libpng-dev libopenblas-dev liblapack-dev gfortran r-base libssl-dev libreadline-dev
 install:
-  - pip install --quiet --use-mirrors numpy nose flake8 coveralls
+  - pip install --quiet --use-mirrors numpy cython
   - pip install -e git+https://github.com/hackliff/intuition.git@develop#egg=intuition
-  - pip install --use-mirrors -r requirements.txt
+  - pip install --use-mirrors --upgrade -r dev-requirements.txt
+  - sudo python setup.py install
 
 before_script:
-  - flake8 insights tests
+  - flake8 --ignore E265 insights tests
 script:
   - nosetests -w tests --with-coverage --cover-package=insights
 

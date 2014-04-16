@@ -79,8 +79,8 @@ class BlackLitterman(PortfolioFactory):
         for i, security in enumerate(data):
             for day in range(0, adapt_window):
                 day_of = all_prices[security][day]
-                day_before = all_prices[security][day-1]
-                daily_returns[i][day] = (day_of-day_before) / day_before
+                day_before = all_prices[security][day - 1]
+                daily_returns[i][day] = (day_of - day_before) / day_before
 
         expreturns, covars = utils.assets_meanvar(daily_returns)
 
@@ -93,7 +93,7 @@ class BlackLitterman(PortfolioFactory):
         Pi = dot(dot(lmb, covars), self.cap_wts)
 
         # Solve for weights before incorporating views
-        weights = utils.solve_weights(Pi+rf, covars, rf)
+        weights = utils.solve_weights(Pi + rf, covars, rf)
 
         # calculate tangency portfolio
         mean, var = utils.compute_mean(weights, expreturns), \
@@ -130,7 +130,7 @@ class BlackLitterman(PortfolioFactory):
         for i, security in enumerate(data):
             current_position = self.portfolio.positions[security].amount
             new_position = (portfolio_value * new_weights[i]) / \
-                all_prices[security][adapt_window-1]
+                all_prices[security][adapt_window - 1]
 
             #FIXME I dont know why if fails with certain securities
             if not np.isnan(new_position):

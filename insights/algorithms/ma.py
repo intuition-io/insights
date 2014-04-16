@@ -10,8 +10,9 @@
 '''
 
 from zipline.transforms import MovingAverage
-#import insights.plugins.mail as mail
+import insights.plugins.mail as mail
 from intuition.api.algorithm import TradingFactory
+from insights.algorithms.utils import common_middlewares
 
 
 class DualMovingAverage(TradingFactory):
@@ -30,10 +31,11 @@ class DualMovingAverage(TradingFactory):
     '''
     def initialize(self, properties):
         # Interactive, mobile, hipchat, database and commission middlewares
-        self.use_default_middlewares(properties)
-        #report_mails = properties.get('reports')
-        #if report_mails:
-            #self.use(mail.Report(report_mails).send_briefing)
+        for middleware in common_middlewares(properties, self.identity):
+            self.use(middleware)
+        report_mails = properties.get('reports')
+        if report_mails:
+            self.use(mail.Report(report_mails).send_briefing)
 
         long_window = int(properties.get('long_window', 30))
         short_window = int(properties.get('short_window', 0))
@@ -82,7 +84,8 @@ class Momentum(TradingFactory):
     #FIXME Too much transactions, can't handle it on wide universe
     def initialize(self, properties):
         # Interactive, mobile, hipchat, database and commission middlewares
-        self.use_default_middlewares(properties)
+        for middleware in common_middlewares(properties, self.identity):
+            self.use(middleware)
 
         self.max_notional = 2000.1
         self.min_notional = -2000.0

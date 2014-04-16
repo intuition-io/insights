@@ -5,12 +5,6 @@
   File context
   ------------
 
-  Fetch the configuration from json or yaml flat files.
-  It needs an input like :
-  <path/to/file.{json,yml,yaml}>
-  It supports relative and absolute path. However, if the first directory
-  provided is 'intuition', it will search for the file into ~/.intuition.
-
   :copyright (c) 2014 Xavier Bruhiere.
   :license: Apache 2.0, see LICENSE for more details.
 '''
@@ -21,6 +15,13 @@ from intuition.api.context import ContextFactory
 
 
 class FileContext(ContextFactory):
+    '''
+    Fetch the configuration from json or yaml flat files. It expects an input
+    like : <path/to/file.{json,yml,yaml}> and supports relative and absolute
+    path.
+    However, if the first directory provided is 'intuition', it will
+    search for the file into ~/.intuition.
+    '''
 
     def initialize(self, storage):
         config_file = storage['path'][-1]

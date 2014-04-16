@@ -9,11 +9,12 @@
   :license: Apache 2.0, see LICENSE for more details.
 '''
 
-
+import collections
 from zipline.transforms.ta import RSI
 import insights.transforms as transforms
 import insights.plugins.mail as mail
 from intuition.api.algorithm import TradingFactory
+from insights.algorithms.utils import common_middlewares
 
 
 class RSIWithMA(TradingFactory):
@@ -37,7 +38,8 @@ class RSIWithMA(TradingFactory):
 
     def initialize(self, properties):
         # Interactive, mobile, hipchat, database and commission middlewares
-        self.use_default_middlewares(properties)
+        for middleware in common_middlewares(properties, self.identity):
+            self.use(middleware)
 
         report_mails = properties.get('reports')
         if report_mails:
@@ -61,7 +63,11 @@ class RSIWithMA(TradingFactory):
         self.under_priced = {sid: False for sid in data}
 
     def event(self, data):
-        signals = {'buy': {}, 'sell': {}}
+        #signals = {
+            #'buy': collections.OrderedDict(),
+            #'sell': collections.OrderedDict()
+        #}
+        signals = {}
 
         rsi_data = self.rsi.handle_data(data)
         loopback_prices = self.prices_transform.handle_data(data)
@@ -70,21 +76,31 @@ class RSIWithMA(TradingFactory):
 
         self.manager.advise(historical_prices=loopback_prices)
 
+        ranked = {}
+        banked = {}
         for sid in data:
-            if rsi_data[sid] < self.sell_trigger and self.over_priced[sid]:
-                signals['sell'][sid] = data[sid]
+            rsi = rsi_data[sid]
+            if rsi < self.sell_trigger and self.over_priced[sid]:
+                banked[sid] = rsi
                 self.over_priced[sid] = False
 
-            elif rsi_data[sid] > self.sell_trigger \
+            elif rsi > self.sell_trigger \
                     and not self.over_priced[sid]:
                 self.over_priced[sid] = True
 
-            elif rsi_data[sid] > self.buy_trigger and self.under_priced[sid]:
-                signals['buy'][sid] = data[sid]
+            elif rsi > self.buy_trigger and self.under_priced[sid]:
+                ranked[sid] = rsi
                 self.under_priced[sid] = False
 
-            elif rsi_data[sid] < self.buy_trigger \
+            elif rsi < self.buy_trigger \
                     and not self.under_priced[sid]:
                 self.under_priced[sid] = True
+
+        signals['buy'] = collections.OrderedDict(
+            {sid: data[sid] for sid, _ in sorted(
+                ranked.items(), key=lambda t: t[1])})
+        signals['sell'] = collections.OrderedDict(
+            {sid: data[sid] for sid, _ in sorted(
+                banked.items(), key=lambda t: t[1])})
 
         return signals

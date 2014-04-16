@@ -9,7 +9,7 @@
   :license: Apache 2.0, see LICENSE for more details.
 '''
 
-import intuition.data.remote as remote
+from zipline.utils.factory import load_from_yahoo, load_bars_from_yahoo
 
 
 class YahooPrices(object):
@@ -30,8 +30,8 @@ class YahooPrices(object):
         }
 
     def get_data(self, sids, start, end):
-        return remote.Data().fetch_equities_daily(
-            sids, indexes={}, start=start, end=end)
+        return load_from_yahoo(
+            stocks=sids, indexes={}, start=start, end=end)
 
 
 class YahooOHLC(object):
@@ -56,8 +56,7 @@ class YahooOHLC(object):
         }
 
     def get_data(self, sids, start, end):
-        data = remote.Data().fetch_equities_daily(
-            sids, ohlc=True, indexes={}, start=start, end=end)
-        #import ipdb; ipdb.set_trace()
+        data = load_bars_from_yahoo(
+            stocks=sids, indexes={}, start=start, end=end)
         self.sids = data.items
         return data

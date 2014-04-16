@@ -24,7 +24,7 @@ You can follow the development on this [trello board][1] and chat about the
 project on [Gitter][3].
 
 A webapp built on top of *intuition* is also in development, get your early
-ticket at http://intuition.io !
+ticket at [intuition.io](http://intuition.io) !
 
 
 Contributing

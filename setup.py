@@ -24,19 +24,19 @@ from insights import __version__, __author__, __licence__
 
 
 requires = [
-    'numpy',
-    'python-etcd',
-    'pandas>=0.13.0.dev',
-    'patsy',
-    'redis',
-    'datetime',
-    'clint',
-    'rpy2',
-    'pymongo',
-    'PyYAML',
-    'requests',
-    'rethinkdb',
-    'influxdb']
+    'numpy>=1.8.1',
+    'patsy>=0.2.1',
+    'clint>=0.3.6',
+    'python-etcd>=0.3.0',
+    'redis>=2.9.1',
+    'rpy2>=2.3.10',
+    'pymongo>=2.7',
+    'PyYAML>=3.11',
+    'requests>=2.2.1',
+    'rethinkdb>=1.12.0-1',
+    'influxdb>=0.1.6',
+    'intuition>=0.4.0'
+]
 
 
 def long_description():
@@ -72,7 +72,10 @@ setup(
         'Topic :: System :: Distributed Computing',
     ],
     scripts=['intuition-db'],
-    data_files=[(os.path.expanduser('~/.intuition/R'), glob('./R/*'))],
+    data_files=[
+        (os.path.expanduser('~/.intuition/R'), glob('./R/*')),
+        (os.path.expanduser('~/.intuition/assets'), glob('./assets/*'))
+    ],
     dependency_links=[
         'http://github.com/pydata/pandas/tarball/master#egg=pandas-0.13.0.dev']
 )

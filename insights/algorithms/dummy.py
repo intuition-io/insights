@@ -12,6 +12,7 @@
 import random
 from intuition.api.algorithm import TradingFactory
 import insights.transforms as transforms
+from insights.algorithms.utils import common_middlewares
 
 
 class BuyAndHold(TradingFactory):
@@ -30,7 +31,8 @@ class BuyAndHold(TradingFactory):
         self.rate = properties.get('rate', -1)
 
         # Interactive, mobile, hipchat, database and commission middlewares
-        self.use_default_middlewares(properties)
+        for middleware in common_middlewares(properties, self.identity):
+            self.use(middleware)
 
     def _check_rate(self):
         return (self.rate > 0) and (self.days % self.rate == 0)
@@ -56,7 +58,8 @@ class Random(TradingFactory):
     '''
     def initialize(self, properties):
 
-        self.use_default_middlewares(properties)
+        for middleware in common_middlewares(properties, self.identity):
+            self.use(middleware)
 
         self.buy_trigger = properties.get(
             'buy_trigger', random.randint(500, 1000) / 1000.0)
@@ -92,7 +95,8 @@ class RegularRebalance(TradingFactory):
 
     def initialize(self, properties):
 
-        self.use_default_middlewares(properties)
+        for middleware in common_middlewares(properties, self.identity):
+            self.use(middleware)
 
         # Set Max and Min positions in security
         self.max_notional = 1000000.1

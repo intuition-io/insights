@@ -1,3 +1,14 @@
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
+
+'''
+  Manager utilities
+  -----------------
+
+  :copyright (c) 2014 Xavier Bruhiere.
+  :license: Apache 2.0, see LICENSE for more details.
+'''
+
 import numpy as np
 import scipy.optimize
 
@@ -53,7 +64,7 @@ def assets_meanvar(daily_returns, trading_days_per_year=255):
     # Compute covariance matrix
     covars = np.cov(daily_returns)
     # Annualize expected returns and covariances
-    expreturns = (1+expreturns)**trading_days_per_year-1
+    expreturns = (1 + expreturns) ** trading_days_per_year - 1
     covars = covars * trading_days_per_year
 
     return expreturns, covars
@@ -67,11 +78,11 @@ def solve_weights(R, C, rf):
     # Bounds for decision variables
     b_ = [(0.1, 1) for i in range(n)]
     # Constraints - weights must sum to 1
-    c_ = ({'type': 'eq', 'fun': lambda W: sum(W)-1.})
+    c_ = ({'type': 'eq', 'fun': lambda W: sum(W) - 1.})
     # 'target' return is the expected return on the market portfolio
     optimized = scipy.optimize.minimize(
         fitness, W, (
-            R, C, sum(R*W)), method='SLSQP', constraints=c_, bounds=b_)
+            R, C, sum(R * W)), method='SLSQP', constraints=c_, bounds=b_)
     if not optimized.success:
         #NOTE Or np.zeros ?
         return np.ones([n]) / n
@@ -96,5 +107,5 @@ def fitness(W, R, C, r):
     # Penalty for not meeting stated portfolio return effectively serves as
     # optimization constraint
     # Here, r is the 'target' return
-    penalty = 0.1*abs(mean_1-r)
+    penalty = 0.1 * abs(mean_1 - r)
     return var + penalty
