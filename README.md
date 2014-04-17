@@ -3,8 +3,7 @@ Insights
 
 [![Latest Version](https://pypip.in/v/insights/badge.png)](https://pypi.python.org/pypi/insights/)
 [![Build Status](https://travis-ci.org/hackliff/insights.png?branch=master)](https://travis-ci.org/hackliff/insights)
-[![Coverage Status](https://coveralls.io/repos/hackliff/insights/badge.png)](https://coveralls.io/r/hackliff/insights)
-[![Code Health](https://landscape.io/github/hackliff/insights/master/landscape.png)](https://landscape.io/github/hackliff/insights/master)
+[![Coverage Status](https://coveralls.io/repos/hackliff/insights/badge.png?branch=develop)](https://coveralls.io/r/hackliff/insights?branch=develop)
 [![Requirements Status](https://requires.io/github/hackliff/insights/requirements.png?branch=master)](https://requires.io/github/hackliff/insights/requirements/?branch=master)
 [![License](https://pypip.in/license/insights/badge.png)](https://pypi.python.org/pypi/insights/)
 

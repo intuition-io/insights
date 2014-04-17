@@ -32,12 +32,17 @@ class Stocks(object):
 
     def clean(self, everything=False):
         log.debug('cleaning garbage')
-        for extension in ['aux', 'log', 'out', 'tex']:
-            os.remove('report.{}'.format(extension))
+        unwanted = ['aux', 'log', 'out', 'tex']
         if everything:
-            os.remove('report.{}'.format('pdf'))
+            unwanted.append('pdf')
+        unwanted = map(lambda x: 'report.{}'.format(x), unwanted)
+        for filename in unwanted:
+            if os.path.exists(filename):
+                log.debug('deleting {}'.format(filename))
+                os.remove(filename)
 
-        shutil.rmtree('figure')
+        if os.path.exists('figure'):
+            shutil.rmtree('figure')
 
     def process(self):
         log.info('processing report')
