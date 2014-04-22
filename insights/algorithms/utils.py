@@ -9,7 +9,7 @@
   :license: Apache 2.0, see LICENSE for more details.
 '''
 
-import insights.plugins.database as database
+import insights.plugins.database.rethink as database
 import insights.plugins.mobile as mobile
 import insights.plugins.hipchat as hipchat
 import insights.plugins.messaging as msg

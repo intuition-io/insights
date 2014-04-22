@@ -25,7 +25,7 @@ class Constant(PortfolioFactory):
     def initialize(self, configuration):
         self.log.debug(configuration)
 
-    def optimize(self, date, to_buy, to_sell, parameters):
+    def optimize(self, to_buy, to_sell):
         '''
         Buy sid * parameters['buy_amount'] * parameters['scale'][sid]
         Sell sid * parameters['sell_amount'] * parameters['scale'][sid]
@@ -34,18 +34,18 @@ class Constant(PortfolioFactory):
 
         # Process every stock the same way
         for s in to_buy:
-            quantity = parameters.get('buy_amount', 100)
-            if s in parameters.get('scale', {}):
-                quantity *= parameters['scale'][s]
+            quantity = self.properties.get('buy_amount', 100)
+            if s in self.properties.get('scale', {}):
+                quantity *= self.properties['scale'][s]
             # Allocate defined amount to buy
             allocations[s] = int(quantity)
 
         # NOTE You must provide sell_amount if you want to short
         for s in to_sell:
-            quantity = parameters.get(
+            quantity = self.properties.get(
                 'sell_amount', self.portfolio.positions[s].amount)
-            if s in parameters.get('scale', {}):
-                quantity *= parameters['scale'][s]
+            if s in self.properties.get('scale', {}):
+                quantity *= self.properties['scale'][s]
             # Allocate defined amount to buy
             allocations[s] = -int(quantity)
 
@@ -60,7 +60,7 @@ class Fair(PortfolioFactory):
     doc: Dispatch equal weigths for buy signals and give up everything on sell
       ones.
     '''
-    def optimize(self, date, to_buy, to_sell, parameters):
+    def optimize(self, to_buy, to_sell):
         allocations = {}
         if to_buy:
             fraction = round(1.0 / float(len(to_buy)), 2)

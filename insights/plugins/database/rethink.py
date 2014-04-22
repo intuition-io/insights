@@ -1,69 +1,39 @@
-#
-# Copyright 2014 Xavier Bruhiere
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
 
+'''
+  Rethinkdb plugin
+  ----------------
 
-import os
+  :copyright (c) 2014 Xavier Bruhiere.
+  :license: Apache 2.0, see LICENSE for more details.
+'''
+
 import sys
-import copy
 import pytz
+import datetime as dt
 import random
 from clint.textui import progress
 import pandas as pd
-
 import rethinkdb as rdb
-from influxdb import client as influxdb
-
 import dna.logging
 import dna.time_utils
+from intuition.data.quandl import DataQuandl
 import intuition.data.utils as datautils
-
-
-# We will use these settings later in the code to
-# connect to the RethinkDB server.
-DB_CONFIG = {
-    'host': os.getenv('DB_HOST', 'localhost'),
-    'port': os.getenv('DB_PORT', 28015),
-    'db': os.getenv('DB_NAME', 'intuition'),
-    'user': os.getenv('DB_USER', 'quant'),
-    'password': os.getenv('DB_PASSWORD', 'ity')
-}
+import insights.plugins.database.utils as dbutils
 
 
 log = dna.logging.logger(__name__)
 
 
-def _portfolio_to_dict(portfolio):
-    json_pf = portfolio.__dict__
-    if json_pf['positions']:
-        for sid, infos in portfolio.positions.iteritems():
-            json_pf['positions'][sid] = infos.__dict__
-    return json_pf
-
-
-def insert_char(string, char, pos):
-    return char.join([string[:pos], string[pos:]])
-
-
 #TODO Store TradingAlgo.recorded_vars
 class RethinkdbBackend(object):
-    ''' Higher level of rethinkdb management '''
+    ''' Low level of rethinkdb management '''
 
     def __init__(self, **kwargs):
-        host = kwargs.get('host', DB_CONFIG['host'])
-        port = kwargs.get('port', DB_CONFIG['port'])
-        db = kwargs.get('db', DB_CONFIG['db'])
+        host = kwargs.get('host', dbutils.DB_CONFIG['host'])
+        port = kwargs.get('port', dbutils.DB_CONFIG['port'])
+        db = kwargs.get('db', dbutils.DB_CONFIG['db'])
         self.table = kwargs.get('table', None)
 
         try:
@@ -139,8 +109,8 @@ class RethinkdbFinance(RethinkdbBackend):
                 {'date': datetime,
                  'cmr': perf_tracker.cumulative_risk_metrics.to_dict(),
                  'extras': {'daily_return': daily_return},
-                 'portfolio': _portfolio_to_dict(
-                     copy.deepcopy(portfolio))}).run(self.session)
+                 'portfolio': dbutils.portfolio_to_dict(
+                     portfolio)}).run(self.session)
             log.debug(result)
 
         self._last_price = portfolio.portfolio_value
@@ -150,9 +120,9 @@ class RethinkdbFinance(RethinkdbBackend):
         if reset:
             self._reset_data(table)
         length = len(data)
-        for dt, row in progress.bar(data.iterrows(), expected_size=length):
+        for date, row in progress.bar(data.iterrows(), expected_size=length):
             record = row.to_dict()
-            record.update({'date': dt})
+            record.update({'date': date})
             record.update(metadata)
             report = rdb.table(table).insert(record).run(self.session)
             assert not report['errors']
@@ -214,33 +184,52 @@ class RethinkdbFinance(RethinkdbBackend):
         return self._load_quotes(sids, start, end, select)
 
 
-class InfluxdbBackend():
-    '''
-    Adds InfluxDB database backend to the portfolio
-    '''
-    def __init__(self, name):
-        self.name = name
-        self.session = self._connection()
+class Keeper(object):
+    ''' Fill and synchronize database '''
 
-    def _connection(self):
-        #TODO No error raised if it fails, check it yourself
-        return influxdb.InfluxDBClient(
-            DB_CONFIG['host'], DB_CONFIG['port'],
-            DB_CONFIG['user'], DB_CONFIG['password'], DB_CONFIG['db'])
+    def __init__(self, db='quotes'):
+        self.db = RethinkdbFinance(db=db)
 
-    def save_portfolio(self, datetime, portfolio):
-        '''
-        Store in Rethinkdb a zipline.Portfolio object
-        '''
-        log.debug('Saving portfolio in database')
-        pf = _portfolio_to_dict(copy.deepcopy(portfolio))
-        pf.pop('positions')
-        data = [{
-            "name": self.name,
-            "time": datetime.strftime("%Y-%m-%d %H:%M"),
-            "columns": pf.keys(),
-            "points": [pf.values()]}]
-        # Timestamp type is not json serializable
-        data[0]['points'][0][-1] = pf['start_date'].__str__()
+        log.info('using {} as data provider'.format('quandl.com'))
+        self.feed = DataQuandl()
 
-        self.session.write_points(data)
+    def _store(self, sid, data):
+        if not data.isnull().any().any():
+            log.info('saving {} in database'.format(sid))
+            self.db.save_quotes(sid, data, {}, reset=self.reset)
+        else:
+            log.warning('{}: empty dataset'.format(sid))
+
+    def fill_database(self, sids, start, end):
+        if isinstance(end, str):
+            start = dna.time_utils.normalize_date_format(start)
+        if isinstance(end, str):
+            end = dna.time_utils.normalize_date_format(end)
+        self.reset = True
+        self._download_and_store(sids, start, end)
+
+    def sync(self, sids, start, end):
+        # TODO Per quote sync
+        younger_date = dt.datetime(3020, 1, 1, tzinfo=pytz.utc)
+        for sid in sids:
+            last_entry = self.db.last_chrono_entry(sid)
+            if last_entry['date'] < younger_date:
+                younger_date = last_entry['date']
+
+        start = younger_date + dt.timedelta(1)
+        end = dt.date.today()
+        self.reset = False
+
+        log.info('downloading {} data ({} -> {})'.format(sids, start, end), 4)
+        self._download_and_store(sids, start, end)
+
+    def _download_and_store(self, sids, start, end):
+        data = self.feed.fetch(
+            sids, start=start, end=end, returns='pandas')
+
+        for sid in data:
+            try:
+                self._store(sid=sid, data=data[sid])
+            except Exception as error:
+                log.error(error)
+                continue

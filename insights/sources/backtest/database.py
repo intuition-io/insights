@@ -11,7 +11,7 @@
 
 import pandas as pd
 import copy
-from insights.plugins.database import RethinkdbFinance
+from insights.plugins.database.rethink import RethinkdbFinance
 from intuition.data.quandl import DataQuandl
 
 

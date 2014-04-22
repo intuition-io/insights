@@ -15,7 +15,7 @@ class ConstantManagerTestCase(FactoryManagerTestCase):
 
     def test_optimize_empty_signals(self):
         manager = linear.Constant({})
-        alloc, e_ret, e_risk = manager.optimize(self.some_date, {}, {}, {})
+        alloc, e_ret, e_risk = manager.optimize({}, {})
         self._check_optimize_return(alloc, e_ret, e_risk)
         eq_(alloc, {})
         eq_(e_ret, 0)
@@ -24,23 +24,21 @@ class ConstantManagerTestCase(FactoryManagerTestCase):
     def test_optimize_buy_signals(self):
         manager = linear.Constant({})
         alloc, e_ret, e_risk = manager.optimize(
-            self.some_date, to_buy=self.buy_signal, to_sell={}, parameters={})
+            to_buy=self.buy_signal, to_sell={})
         self._check_optimize_return(alloc, e_ret, e_risk)
         eq_(alloc, {'goog': self.default_amount})
 
     def test_optimize_buy_signals_custom_amount(self):
-        manager = linear.Constant({})
+        manager = linear.Constant({'buy_amount': 200})
         alloc, e_ret, e_risk = manager.optimize(
-            self.some_date, to_buy=self.buy_signal,
-            to_sell={}, parameters={'buy_amount': 200})
+            to_buy=self.buy_signal, to_sell={})
         self._check_optimize_return(alloc, e_ret, e_risk)
         eq_(alloc, {'goog': 200})
 
     def test_optimize_buy_signals_init_custom_amount(self):
         manager = linear.Constant({'buy_amount': 200})
         alloc, e_ret, e_risk = manager.optimize(
-            self.some_date, to_buy=self.buy_signal,
-            to_sell={}, parameters=manager._optimizer_parameters)
+            to_buy=self.buy_signal, to_sell={})
         self._check_optimize_return(alloc, e_ret, e_risk)
         eq_(alloc, {'goog': 200})
 
@@ -52,7 +50,7 @@ class FairManagerTestCase(FactoryManagerTestCase):
 
     def test_optimize_empty_signals(self):
         manager = linear.Fair({})
-        alloc, e_ret, e_risk = manager.optimize(self.some_date, {}, {}, {})
+        alloc, e_ret, e_risk = manager.optimize({}, {})
         self._check_optimize_return(alloc, e_ret, e_risk)
         eq_(alloc, {})
         eq_(e_ret, 0)

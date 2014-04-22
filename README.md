@@ -2,16 +2,15 @@ Insights
 ========
 
 [![Latest Version](https://pypip.in/v/insights/badge.png)](https://pypi.python.org/pypi/insights/)
-[![Build Status](https://travis-ci.org/hackliff/insights.png?branch=master)](https://travis-ci.org/hackliff/insights)
+[![Build Status](https://drone.io/github.com/intuition-io/insights/status.png)](https://drone.io/github.com/intuition-io/insights/latest)
 [![Coverage Status](https://coveralls.io/repos/hackliff/insights/badge.png?branch=develop)](https://coveralls.io/r/hackliff/insights?branch=develop)
-[![Requirements Status](https://requires.io/github/hackliff/insights/requirements.png?branch=master)](https://requires.io/github/hackliff/insights/requirements/?branch=master)
 [![License](https://pypip.in/license/insights/badge.png)](https://pypi.python.org/pypi/insights/)
+[![Gitter chat](https://badges.gitter.im/intuition-io.png)](https://gitter.im/intuition-io)
 
 > Plug-and-play building blocks for modern quants
 
 Quantitative algorithms, portfolio managers data sources, contexts and
-plugins for [Intuition][2]. Once provided to the configuration, those
-modules, or the ones you create, are dynamically loaded.
+plugins for [intuition][2]. Your algorithmic trading armory !
 
 
 Getting started

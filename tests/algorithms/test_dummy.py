@@ -3,43 +3,64 @@ Tests for insights.algorithms.dummy
 '''
 
 from nose.tools import ok_, eq_
-import yaml
-import copy
 from insights.test_framework import FactoryAlgorithmTestCase
 import insights.algorithms.dummy as dummy
 
 
-class RandomALgoTestCase(FactoryAlgorithmTestCase):
+class RandomAlgoTestCase(FactoryAlgorithmTestCase):
 
-    def test_yaml_doc(self):
-        doc = yaml.load(dummy.Random.__doc__)
-        ok_(isinstance(doc, dict))
-        self.assertIn('doc', doc)
-        ok_(isinstance(doc.get('parameters', {}), dict))
+    def test_doc(self):
+        self._check_yaml_doc(dummy.Random)
 
     def test_initialize_default(self):
-        Algo = copy.deepcopy(dummy.Random)
-        Algo.identity = 'test_random'
-        algo = Algo(properties={})
-        eq_(algo.identity, 'test_random')
+        algo = dummy.Random()
+        eq_(algo.identity, self.default_identity)
         eq_(algo.middlewares, [])
         ok_(algo.buy_trigger > 0.5 and algo.buy_trigger < 1)
         ok_(algo.sell_trigger > 0 and algo.sell_trigger < 0.5)
 
-    '''
-    # FIXME Algo is shared between tests
-    def test_initialize_custom(self):
-        Algo = copy.deepcopy(dummy.Random)
-        Algo.identity = 'test_random'
-        algo = Algo(properties={
+    def test_initialize_custom_signal_triggers(self):
+        algo = dummy.Random(properties={
             'buy_trigger': 0.6,
             'sell_trigger': 0.3,
-            'hipchat': '12346',
+        })
+        eq_(algo.buy_trigger, 0.6)
+        eq_(algo.sell_trigger, 0.3)
+
+    def test_initialize_custom_middlewares(self):
+        algo = dummy.Random(properties={
             'mobile': 'Nexus 5',
             'interactive': True
         })
-        eq_(algo.identity, 'test_random')
-        eq_(len(algo.middlewares), 3)
-        eq_(algo.buy_trigger, 0.6)
-        eq_(algo.sell_trigger, 0.3)
-    '''
+        eq_(len(algo.middlewares), 2)
+
+    def test_event_output(self):
+        algo = dummy.Random()
+        self._check_event_output(algo.event(self.event_data))
+
+    def test_deactivate_buy_and_sell(self):
+        algo = dummy.Random(properties={
+            'buy_trigger': 10.0,
+            'sell_trigger': -10.0
+        })
+        signals = algo.event(self.event_data)
+        eq_(signals['buy'], {})
+        eq_(signals['sell'], {})
+
+    def test_always_buy_and_cannot_sell(self):
+        algo = dummy.Random(properties={
+            'buy_trigger': -10.0,
+            'sell_trigger': 10.0
+        })
+        signals = algo.event(self.event_data)
+        ok_(signals['buy'])
+        eq_(signals['sell'], {})
+
+    def test_always_sell_and_cannot_buy(self):
+        algo = dummy.Random(properties={
+            'buy_trigger': 10.0,
+            'sell_trigger': 10.0
+        })
+        signals = algo.event(self.event_data)
+        ok_(signals['sell'])
+        eq_(signals['buy'], {})

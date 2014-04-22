@@ -21,12 +21,12 @@ class BuyAndHold(TradingFactory):
       once or at regular intervals.
     parameters:
       start_time: Unique "buy signal".
-        Ignored if equal or less than 0 [default 2]
+        Ignored if equal or less than 0 [default 3]
       rate: Regular "buy signal", ignored if -1 [default -1]
     '''
     def initialize(self, properties):
-      # Punctual buy signals, except 0 means never
-        self.start_time = properties.get('start_time', 2)
+        # Punctual buy signals, except 0 means never
+        self.start_time = properties.get('start_time', 3)
         # regularly buy signals
         self.rate = properties.get('rate', -1)
 
@@ -35,13 +35,13 @@ class BuyAndHold(TradingFactory):
             self.use(middleware)
 
     def _check_rate(self):
-        return (self.rate > 0) and (self.days % self.rate == 0)
+        return (self.rate > 0) and (self.elapsed_time.days % self.rate == 0)
 
     def event(self, data):
         signals = {'buy': {}, 'sell': {}}
 
         # One shot or always buying or regularly
-        if self.days == self.start_time \
+        if self.elapsed_time.days == self.start_time \
                 or self._check_rate():
             # Only cares about buying everything
             signals['buy'] = data
@@ -118,7 +118,7 @@ class RegularRebalance(TradingFactory):
         #circuit breaker in case transform returns none
         #circuit breaker, only calculate every given rate
         if (daily_returns is None) or \
-                (self.days % self.refresh_period is not 0):
+                (self.elapsed_time.days % self.refresh_period is not 0):
             return signals
 
         #reweight portfolio

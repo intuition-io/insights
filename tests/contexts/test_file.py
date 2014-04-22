@@ -19,13 +19,13 @@ class FileContextTestCase(unittest.TestCase):
         self.file_special_intuition = 'localhost/intuition/test.yml'
         self.file_bad_type = 'localhost/intuition/test.nothing'
         self.file_bad_path = 'localhost/nowhere/test.yml'
-        self.right_yaml_file = 'localhost/contexts/config/backtest.yml'
-        self.right_json_file = 'localhost/contexts/config/live.json'
+        self.right_yaml_file = 'localhost/contexts/_config/backtest.yml'
+        self.right_json_file = 'localhost/contexts/_config/live.json'
 
     def test_initialize(self):
-        loader = context.FileContext('localhost/config/test.yml')
+        loader = context.FileContext('localhost/_config/test.yml')
         ok_(hasattr(loader, 'log'))
-        eq_(loader.configfile, 'config/test.yml')
+        eq_(loader.configfile, '_config/test.yml')
 
     def test_intuition_special_path(self):
         loader = context.FileContext(self.file_special_intuition)
@@ -34,7 +34,7 @@ class FileContextTestCase(unittest.TestCase):
 
     def test_file_supports(self):
         for extension, module in self.supported_file_types:
-            loader = context.FileContext('localhost/config/test.' + extension)
+            loader = context.FileContext('localhost/_config/test.' + extension)
             eq_(loader.fmt_module, module)
 
     @raises(NotImplementedError)

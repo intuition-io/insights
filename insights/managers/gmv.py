@@ -38,7 +38,7 @@ class GlobalMinimumVariance(PortfolioFactory):
     def initialize(self, config):
         self.partial_sell = config.get('partial_sell', 1.0)
 
-    def optimize(self, date, to_buy, to_sell, parameters):
+    def optimize(self, to_buy, to_sell):
 
         allocations = {}
 
@@ -49,7 +49,7 @@ class GlobalMinimumVariance(PortfolioFactory):
                 self.portfolio.positions[sid].amount * self.partial_sell))
 
         if to_buy:
-            returns = parameters.get('historical_prices')
+            returns = self.properties.get('historical_prices')
             # NOTE if returns.isnull().any().any(): ?
             if returns is None:
                 # TODO A fallback

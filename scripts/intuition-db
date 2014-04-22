@@ -1,0 +1,86 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
+
+'''
+  Database manager
+  ----------------
+
+  Fetch and store quotes data. The --universe parameter works like the one in
+  Intuition configuration.
+
+  :copyright (c) 2014 Xavier Bruhiere.
+  :license: Apache 2.0, see LICENSE for more details.
+'''
+
+
+import sys
+import argparse
+from clint.textui import puts, colored, indent
+import datetime as dt
+import intuition.data.universe as universe
+import insights.plugins.database.rethink as rethinkdb
+
+
+def parse_cli():
+    parser = argparse.ArgumentParser(
+        description='Intuition-db, quotes database manager')
+    parser.add_argument('-V', '--version',
+                        action='version',
+                        version='%(prog)s v0.0.1 Licence Apache 2.0',
+                        help='Print program version')
+    parser.add_argument('command', type=str,
+                        help='command [dl, sync]')
+    parser.add_argument('-v', '--verbose',
+                        action='store_true',
+                        help='Print logs on stdout')
+    parser.add_argument('-u', '--universe',
+                        action='store', required=True,
+                        help='market universe to evaluate')
+    parser.add_argument('-s', '--start',
+                        action='store', default='2011-01-01',
+                        help='start date for quotes')
+    parser.add_argument('-e', '--end',
+                        action='store', default=dt.date.today(),
+                        help='end date for quotes')
+    parser.add_argument('-b', '--backend',
+                        action='store', default='rethinkdb',
+                        help='database backend to use for storage')
+    return parser.parse_args()
+
+
+def msg(body, indentation=2):
+    with indent(indentation, 'info | '):
+        puts(colored.blue(body))
+
+
+def warning(body, indentation=2):
+    with indent(indentation, 'warn | '):
+        puts(colored.red(body))
+
+
+def main():
+    msg('- Intuition database manager')
+    warning('Only supports cac40 and forex symbols', 4)
+    warning('Only supports rethinkdb backend')
+
+    args = parse_cli()
+
+    market = universe.Market()
+    market.parse_universe_description(args.universe)
+    sids = market.sids
+
+    msg('using {} backend for storage'.format('Rethinkdb'))
+    db_manager = rethinkdb.Keeper()
+
+    if args.command == 'dl':
+        db_manager.fill_database(sids, args.start, args.end)
+    elif args.command == 'sync':
+        db_manager.sync(sids, args.start, args.end)
+    else:
+        raise ValueError('unknown command: {}'.format(args.command))
+    msg('done')
+
+
+if __name__ == '__main__':
+    sys.exit(main())
