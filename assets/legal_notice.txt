@@ -1,0 +1,68 @@
+The information contained on the Intuition website and related assets such as
+emails (the "information") has been prepared by Xavier Bruhiere (nominate
+further XB) solely for informational purposes, is not a recommendation to
+participate in any particular trading strategy and should not be considered as
+an investment advice or an offer to sell or buy securities.
+
+All information provided by XB is impersonal and not tailored to the needs of
+any person, entity or group of persons.
+
+The information shall not be used for any unlawful or unauthorised purposes.
+The information is provided on an "as is" basis.
+
+Although XB shall obtain information from sources which Xavier Bruhiere
+considers to be reliable, neither XB nor its information providers involved in,
+or related to, compiling, computing or creating the information (collectively,
+the "XB Parties") guarantees the accuracy and/or the completeness of any of
+this information.
+
+None of the XB Parties makes any representation or warranty, express or
+implied, as to the results to be obtained by any person or entity from any use
+of this information, and the user of this information assumes the entire risk
+of any use made of this information. None of the XB Parties makes any express
+or implied warranties, and the XB Parties hereby expressly disclaim all implied
+warranties (including, without limitation, any implied warranties of accuracy,
+completeness, timeliness, sequence, currentness, merchantability, quality or
+fitness for a particular purpose) with respect to any of this information.
+
+Without limiting any of the foregoing, in no event shall any of the XB Parties
+have any liability for any direct, indirect, special, punitive, consequential
+or any other damages (including lost profits), even if notified of the
+possibility of such damages.
+
+All Intuition Indices and data are the exclusive property of XB.
+
+Information containing any historical information, data or analysis should not
+be taken as an indication or guarantee of any future performance, analysis,
+forecast or prediction. Past performance does not guarantee future results. In
+many cases, hypothetical, back-tested results were achieved by means of the
+retroactive application of a simulation model and, as such, the corresponding
+results have inherent limitations.
+
+The Index returns shown do not represent the results of actual trading of
+investable assets/securities. XB maintains the Index and calculates the Index
+levels and performance shown or discussed, but does not manage actual assets.
+Index returns do not reflect payment of any sales charges or fees an investor
+may pay to purchase the securities underlying the Index or investment funds
+that are intended to track the performance of the Index. The imposition of
+these fees and charges would cause actual and back-tested performance of the
+securities/fund to be lower than the Index performance shown. Back-tested
+performance may not reflect the impact that any material market or economic
+factors might have had on the advisor's management of actual client assets.
+
+The information may be used to create works such as charts and reports. Limited
+extracts of information and/or data derived from the information may be
+distributed or redistributed provided this is done infrequently in a
+non-systematic manner. The information may be used within the framework of
+investment activities provided that it is not done in connection with the
+marketing or promotion of any financial instrument or investment product that
+makes any explicit reference to the trademarks licensed to XB (INTUITION
+HIVETECH and any other trademarks licensed to XB) and that is based on, or
+seeks to match, the performance of the whole, or any part, of a Intuition
+index. Such use requires that the Subscriber first enters into a separate
+license agreement with XB. The Information may not be used to verify or correct
+other data or information from other sources.
+
+The terms contained in this Disclaimer are in addition to the Terms of Service
+for users without a subscription applicable to the Intuition website, which are
+  incorporated herein by reference.

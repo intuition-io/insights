@@ -4,9 +4,10 @@ python:
 
 before_install:
   - sudo apt-get -y install python-pip python-dev g++ make libfreetype6-dev libpng-dev libopenblas-dev liblapack-dev gfortran r-base libssl-dev libreadline-dev
-  - pip install --quiet --use-mirrors numpy
+  - pip install --quiet --use-mirrors numpy cython
 
 install:
+  - pip install -e git+https://github.com/hackliff/intuition.git@develop#egg=intuition
   - python setup.py install
   - pip install --use-mirrors -r dev-requirements.txt
 

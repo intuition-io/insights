@@ -1,5 +1,12 @@
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
+
 '''
-Test framework for intuition managers
+  Test framework for insights modules
+  -----------------------------------
+
+  :copyright (c) 2014 Xavier Bruhiere
+  :license: Apache 2.0, see LICENSE for more details.
 '''
 
 import abc

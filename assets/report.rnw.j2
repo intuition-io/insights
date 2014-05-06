@@ -69,11 +69,16 @@
 Strategy summary and notification context go here.\newline
 
 Report generated at {{ metrics.date }}, based on an initial capital of
-{{ metrics.capital_base }} dollars (id: {{ metrics.id }} - {{ metrics.progress }} ).
+{{ metrics.capital_base }} euros (id: {{ metrics.id }} - progress: {{ metrics.progress }} ).
+\newline
+
+Strategy implements a {{ summary.algorithm }} algorithm, combined with a
+{{ summary.manager }} allocation management.
 
 \end{abstract}
 
-\section{\Huge {{ strategy_name }} Performance Overview}
+\section{\Huge {{ summary.identity }} Performance Overview}
+
 Portfolio and order book details go here.\newline
 
 
@@ -96,7 +101,7 @@ Portfolio and order book details go here.\newline
   #symbol <- "SU.PA"
   #benchmark_symbol <- "^FCHI"
   #start_date <- "2013/10/01"
-  symbol <- "{{ stock.name }}"
+  symbol <- "{{ stock.symbol }}"
   benchmark_symbol <- "^{{ benchmark }}"
   start_date <- "{{ start_date }}"
   riskfree <- 0.4
