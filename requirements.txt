@@ -1,11 +1,14 @@
-numpy
--e git+https://github.com/pydata/pandas.git@master#egg=pandas-0.13.0-27-gf7aeaeb
-patsy
-python-etcd
-redis
-rpy2
-pymongo
-PyYAML
-requests
-rethinkdb
-influxdb
+numpy==1.8.1
+patsy==0.2.1
+clint==0.3.7
+python-etcd==0.3.0
+redis==2.9.1
+rpy2==2.3.10
+pymongo==2.7
+PyYAML==3.11
+requests==2.2.1
+rethinkdb==1.12.0-1
+influxdb==0.1.6
+scipy==0.14.0
+pandas==0.13.1
+intuition==0.4.0

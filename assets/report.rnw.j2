@@ -1,0 +1,160 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc} % l'encodage des fichiers est utf-8, mettre [latin1] si necessaire
+\usepackage[english]{babel} %le rapport est en français
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx} %pour afficher des images
+\usepackage{float} %pour forcer le placement des images.
+\usepackage{geometry} %pour la modification des marges
+\usepackage{fancyhdr} %pour modification des pieds de page
+\usepackage{longtable}
+\usepackage{listings}
+\usepackage{subfigure}
+\usepackage{hyperref} %pour que les références soient des liens hypertextes
+\usepackage{color} % pour les textes en gris
+
+\newcommand{\ReportTitle}{Stocks Performance Summary}
+\newcommand{\ReportDate}{2014}
+\newcommand{\Location}{Paris}
+\newcommand{\TeamIntuition}{Xavier \textsc{bruhiere}}
+\newcommand{\Author}{Xavier \textsc{bruhiere}}
+\newcommand{\StartupName}{Hive Tech, Sas.}
+\newcommand{\ProjectName}{Intuition}
+\newcommand{\ProjectWebsite}{http://intuition.io}
+
+\geometry{hmargin=2.5cm, vmargin=2.5cm}
+
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancyhead[C]{\small\ReportTitle}
+\fancyfoot[C]{\small\Author ~~ \vline ~~ \ProjectWebsite ~~ \vline ~~ (C) \StartupName }
+
+\fancyfoot[LE, RO]{\thepage}
+\fancyfoot[RE,LO]{\includegraphics[width=1cm]{\string~/.intuition/assets/intuition-logo.png}}
+
+\fancyhead[L,R]{}
+\title{\ReportTitle}
+\date{\ReportDate}
+\author{\Author}
+\makeatletter
+
+\renewcommand\maketitle{
+  \thispagestyle{empty}
+  \begin{center}
+    \includegraphics[height=2cm]{\string~/.intuition/assets/intuition-logo.png}
+    \hspace{\stretch{1}}
+    \includegraphics[height=2cm]{\string~/.intuition/assets/hivetech-icon.png}
+
+    {\large \bf intuition.io notification \\}
+    \vspace{0.5cm}
+    {\LARGE \bf \@title\\}
+
+  \end{center}
+  \setcounter{footnote}{0}
+}
+
+\makeatother
+% ==========================================
+
+
+\begin{document}
+\pagestyle{fancy}
+
+\maketitle
+
+\hrulefill
+
+\begin{abstract}
+Strategy summary and notification context go here.\newline
+
+Report generated at {{ metrics.date }}, based on an initial capital of
+{{ metrics.capital_base }} euros (id: {{ metrics.id }} - progress: {{ metrics.progress }} ).
+\newline
+
+Strategy implements a {{ summary.algorithm }} algorithm, combined with a
+{{ summary.manager }} allocation management.
+
+\end{abstract}
+
+\section{\Huge {{ summary.identity }} Performance Overview}
+
+Portfolio and order book details go here.\newline
+
+
+{% for stock in orderbook %}
+  \newpage
+
+  \section{\Huge {{ stock.name }} Stock Analysis ({{ stock.quantity }})}
+
+  {\large Stock introduction goes here ...}
+
+  \vspace{20pt}
+
+  \subsection{Return Statistics}
+  \vspace{10pt}
+
+  <<eval=TRUE,echo=FALSE,fig.keep='none',results='hide',warning=FALSE,message=FALSE,error=FALSE>>=
+  require(PerformanceAnalytics)
+  require(quantmod)
+  require(TTR)
+  #symbol <- "SU.PA"
+  #benchmark_symbol <- "^FCHI"
+  #start_date <- "2013/10/01"
+  symbol <- "{{ stock.symbol }}"
+  benchmark_symbol <- "^{{ benchmark }}"
+  start_date <- "{{ start_date }}"
+  riskfree <- 0.4
+
+  # Simple symbol quotes
+  data <- getSymbols(symbol, from=start_date, src="yahoo", auto.assign=FALSE)
+  data_returns = dailyReturn(data)
+  benchmark <- getSymbols(benchmark_symbol, from=start_date, src="yahoo", auto.assign=FALSE)
+  benchmark_returns = dailyReturn(benchmark)
+  df <- data.frame(equity=data_returns[0:length(benchmark_returns)], benchmark=benchmark_returns)
+  colnames(df) <- c('equity', 'benchmark')
+  # TODO Use http://www.quandl.com/help/api-for-stock-data for fundamental analysis
+
+  drawDistribution <- function(data)
+  {
+    equity = data[, 'equity', drop=FALSE]
+    benchmark = data[, 'benchmark', drop=FALSE]
+    #layout(rbind(c(1,2), c(3,4), c(5,6)))
+    layout(rbind(1, 2))
+    #chart.Histogram(equity, main="Plain", methods = NULL)
+    chart.Histogram(equity, main="Density", breaks=40, methods = c("add.density", "add.normal", "add.risk"))
+    #chart.Histogram(equity, main="Skew and Kurt", methods = c("add.centered", "add.rug"))
+    #chart.Histogram(equity, main="RiskMeasures", methods = c("add.risk"))
+    #chart.QQPlot(equity, main="RiskMeasures")
+    chart.Boxplot(data[, c(1, 2)])
+  }
+  @
+
+  <<echo=FALSE,eval=TRUE,fig.width=7,fig.height=7, out.width='.49\\linewidth', fig.show='hold'>>=
+  #library(xtable)
+  #print(xtable(t(table.Stats(data_returns)), caption="\\textbf{Some} Stats"),
+  #      scalebox=0.6,
+  #      latex.environment="center",
+  #      include.rownames=FALSE,
+  #      caption.placement="bottom")
+         #hline.after=NULL)
+
+  candleChart(data,
+              show.grid=TRUE,
+              theme=chartTheme("black"),
+              TA="addEMA(n=12);addEMA(n=26);addMACD(slow=26,fast=12);addRSI(n=14)")
+
+  drawDistribution(df)
+  @
+
+  \subsection{Market perspective}
+
+  <<echo=FALSE,eval=TRUE,fig.width=4,fig.height=4, out.width='.49\\linewidth', fig.show='hold'>>=
+  #layout(rbind(c(1, 2)))
+  chart.RelativePerformance(data_returns, benchmark_returns, main="Relative performance", xaxis=TRUE)
+  chart.RollingCorrelation(data_returns, benchmark_returns, main="Relative Correlation")
+  @
+
+{% endfor %}
+
+\end{document}

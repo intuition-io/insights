@@ -1,49 +1,59 @@
-#
-# Copyright 2013 Xavier Bruhiere
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
 
+'''
+  Insights equities live source
+  -----------------------------
 
-import pandas as pd
+  :copyright (c) 2014 Xavier Bruhiere
+  :license: Apache 2.0, see LICENSE for more details.
+'''
 
-from intuition.zipline.data_source import LiveDataFactory
 import intuition.data.remote as remote
 
 
-class EquitiesLiveSource(LiveDataFactory):
-    """
-    At each event datetime of the provided index, EquitiesLiveSource fetchs
-    live data from google finance api.
-    """
-    data = remote.Data()
+class Stocks(object):
+    '''
+    Download live (or slightly delayed) quotes from Google Finance
+    '''
+
+    _specific_mapping = {
+        'google': {
+            'price': (float, 'price'),
+            'change': (float, 'perc_change'),
+            'volume': (lambda x: int(10001), 'price'),
+        },
+        # NOTE short_ration also available but often returned as NaN
+        'yahoo': {
+            'price': (float, 'last'),
+            'change': (float, 'change_pct'),
+            'pe': (float, 'PE'),
+            'volume': (lambda x: int(10001), 'last'),
+        }
+    }
+
+    def __init__(self, sids, properties):
+        self._source = properties.get('source', 'google')
+        self._mapping = {
+            'dt': (lambda x: x, 'dt'),
+            'sid': (lambda x: x, 'sid'),
+        }
+        if self._source in self._specific_mapping.keys():
+            self._mapping.update(self._specific_mapping[self._source])
+        else:
+            raise ValueError('{} source not available.'.format(self._source))
 
     @property
     def mapping(self):
-        return {
-            'dt': (lambda x: x, 'dt'),
-            'sid': (lambda x: x, 'sid'),
-            'price': (float, 'price'),
-            'change': (float, 'perc_change'),
-            'volume': (int, 'volume'),
-        }
+        self._mapping
 
-    def get_data(self):
-        snapshot = self.data.fetch_equities_snapshot(symbols=self.sids,
-                                                     level=1)
+    def get_data(self, sids):
+        # FIXME No volume information with this method
+        if self._source == 'google':
+            snapshot = remote.snapshot_google(symbols=sids)
+        elif self._source == 'yahoo':
+            snapshot = remote.snapshot_yahoo_pandas(symbols=sids)
+
         if snapshot.empty:
             raise ValueError('no equities data available')
-        #FIXME We need volume field to be consistent with the API
-        row = {}
-        for sid in snapshot.columns:
-            row[sid] = {'volume': 1000}
-        return snapshot.append(pd.DataFrame(row))
+        return snapshot

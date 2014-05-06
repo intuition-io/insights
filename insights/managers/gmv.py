@@ -1,7 +1,8 @@
-import numpy as np
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
 
-from intuition.zipline.portfolio import PortfolioFactory
-import insights.transforms as transforms
+import numpy as np
+from intuition.api.portfolio import PortfolioFactory
 
 
 def compute_weigths(daily_returns):
@@ -28,42 +29,38 @@ def compute_weigths(daily_returns):
 # https://www.quantopian.com/posts/global-minimum-variance-portfolio?c=1
 class GlobalMinimumVariance(PortfolioFactory):
     '''
-    Computes from data history a suitable compromise between risks and returns.
+    doc: Computes a suitable compromise between risks and returns on buy
+      signals and gives up the stock on sell ones.
+
+    parameters:
+      partial_sale: Percentage of the stock amount to sell [default 1]
     '''
-    def initialize(self, config):
+    def initialize(self, properties):
+        self.partial_sell = properties.get('partial_sell', 1.0)
 
-        self.price_transform = transforms.get_past_prices(
-            #refresh_period=10,
-            window_length=config.get('window', 40),
-            compute_only_full=config.get('only_full', True))
-
-    def optimize(self, date, to_buy, to_sell, parameters):
+    def optimize(self, to_buy, to_sell):
 
         allocations = {}
 
+        # Simply sell
         for sid in to_sell:
-            allocations[sid] = - self.portfolio.positions[sid].amount
+            # NOTE Cannot go short in this configuration
+            allocations[sid] = - int(round(
+                self.portfolio.positions[sid].amount * self.partial_sell))
 
-        if len(to_buy) > 0:
-            if 'historical_prices' in parameters:
-                returns = parameters['historical_prices']
-            else:
-                returns_df = self.price_transform.handle_data(to_buy)
-                if returns_df is None:
-                    # Not enough data yet
-                    return allocations, 0, 1
-                for i, column in enumerate(returns_df):
-                    # Remove incomplete data
-                    if returns_df[column].isnull().any():
-                        returns_df = returns_df.dropna(axis=1)
-                returns = returns_df.values
+        if to_buy:
+            # TODO If the universe is large enough, limit `returns` to `to_buy`
+            returns = self.properties.get('historical_prices')
+            # NOTE if returns.isnull().any().any(): ?
+            if returns is None:
+                # TODO A fallback
+                raise NotImplementedError('GMV manager needs history prices')
 
             weights = compute_weigths(returns.transpose())
             if np.isnan(weights).any() or not weights.any():
                 self.log.warning('Could not compute weigths')
-                allocations = {}
             else:
-                for i, sid in enumerate(returns_df):
+                for i, sid in enumerate(returns):
                     allocations[sid] = float(weights[i])
 
         return allocations, 0, 1
