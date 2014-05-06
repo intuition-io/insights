@@ -59,6 +59,7 @@ class DualMovingAverage(TradingFactory):
         self.invested = {sid: False for sid in data}
 
     def event(self, data):
+        self.logger.debug('Processing event on {}'.format(self.get_datetime()))
         signals = {'buy': {}, 'sell': {}}
 
         for ticker in data:

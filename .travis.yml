@@ -12,7 +12,7 @@ install:
   - pip install --use-mirrors --upgrade -r dev-requirements.txt
 
 before_script:
-  - pep8 --ignore E265 insights tests
+  - pep8 --ignore E265 --exclude _review insights tests
 script:
   - nosetests -w tests --with-coverage --cover-package=insights
 

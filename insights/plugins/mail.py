@@ -1,17 +1,13 @@
-#
-# Copyright 2013 Xavier Bruhiere
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
+
+'''
+  Mail plugin
+  -----------
+
+  :copyright (c) 2014 Xavier Bruhiere
+  :license: Apache 2.0, see LICENSE for more details.
+'''
 
 
 import os
@@ -25,7 +21,7 @@ import dna.logging
 log = dna.logging.logger(__name__)
 
 
-#TODO Get some inspiration: http://godoc.org/github.com/riobard/go-mailgun
+# TODO Get some inspiration: http://godoc.org/github.com/riobard/go-mailgun
 class Mailgun(object):
     '''
     Send emails through mailgun api
@@ -63,9 +59,9 @@ class Mailgun(object):
         return feedback
 
 
-# TODO Only if live and add securities anyway
 class Report(Mailgun):
     ''' Sent mail reports about the situation '''
+
     asset_dir = os.path.expanduser('~/.intuition/assets/')
     report_name = 'report.rnw'
     mail_name = 'mail-template.html'
@@ -79,9 +75,10 @@ class Report(Mailgun):
         log.info('Mail report ready', recipients=targets)
 
         self.template_env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(self.asset_dir))
+            loader=jinja2.FileSystemLoader(self._asset_dir))
 
-    def _render_report_template(self, identity, orderbook, benchmark='GSPC'):
+    def _render_report_template(
+            self, identity, orderbook, metrics, benchmark='GSPC'):
         stocks = []
         for sid, quantity in orderbook.iteritems():
             stocks.append({
@@ -94,7 +91,9 @@ class Report(Mailgun):
             strategy_name=identity,
             start_date='2013/11/01',
             benchmark=benchmark,
-            orderbook=stocks)
+            orderbook=stocks,
+            metrics=metrics
+        )
 
     def _render_email_template(self, identity, orderbook):
         completion = []
@@ -103,26 +102,29 @@ class Report(Mailgun):
                 'action': 'Buy' if quantity > 0 else 'Sell',
                 'quantity': abs(quantity),
                 'equity': sid
-                #'reason': 'not implemented'
             })
         template = self.template_env.get_template(self.mail_name + '.j2')
         return template.render(
-            strategy_name=identity, suggestions=completion)
+            strategy_name=identity,
+            suggestions=completion
+        )
 
     @property
     def is_allowed(self):
         return time.time() - self._last_send > 30.0
 
-    def send_briefing(self, identity, orderbook, portfolio):
+    def send_briefing(self, identity, orderbook, metrics):
         # TODO Portfolio summary
         if orderbook and self.is_allowed:
             self._last_send = time.time()
 
+            # TODO catch errors
             log.info('generating report template')
             report = self._render_report_template(
-                identity, orderbook)
+                identity, orderbook, metrics
+            )
             fd = codecs.open(
-                self.asset_dir + self.report_name, 'w', 'utf-8')
+                self._asset_dir + self.report_name, 'w', 'utf-8')
             fd.write(report)
             fd.close()
 

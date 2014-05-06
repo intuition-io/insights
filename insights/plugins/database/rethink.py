@@ -9,7 +9,6 @@
   :license: Apache 2.0, see LICENSE for more details.
 '''
 
-import sys
 import pytz
 import datetime as dt
 import random
@@ -26,7 +25,6 @@ import insights.plugins.database.utils as dbutils
 log = dna.logging.logger(__name__)
 
 
-#TODO Store TradingAlgo.recorded_vars
 class RethinkdbBackend(object):
     ''' Low level of rethinkdb management '''
 
@@ -39,7 +37,8 @@ class RethinkdbBackend(object):
         try:
             self.session = self._connection(host, port, db)
         except rdb.RqlDriverError, error:
-            sys.exit(error)
+            log.error(error)
+            raise
 
         # Prepare the database
         if db not in rdb.db_list().run(self.session):
@@ -89,31 +88,26 @@ class RethinkdbFinance(RethinkdbBackend):
     '''
     Adds RethinkDB database backend to the portfolio
     '''
-    # Temporary for daily return computation
-    _last_price = None
 
-    def save_portfolio(self, datetime, portfolio, perf_tracker):
+    def save_portfolio(self, datetime, portfolio, perf_tracker, recorded_vars):
         '''
         Store in Rethinkdb a zipline.Portfolio object
         '''
         if perf_tracker.progress != 0.0 and self.table:
-            # NOTE Use zipline perf tracker ?
-            if self._last_price:
-                daily_return = ((portfolio.portfolio_value - self._last_price)
-                                / self._last_price) * 100
-            else:
-                daily_return = 0.0
 
-            log.debug('Saving portfolio in database')
-            result = rdb.table(self.table).insert(
-                {'date': datetime,
-                 'cmr': perf_tracker.cumulative_risk_metrics.to_dict(),
-                 'extras': {'daily_return': daily_return},
-                 'portfolio': dbutils.portfolio_to_dict(
-                     portfolio)}).run(self.session)
-            log.debug(result)
+            metrics = perf_tracker.to_dict()
+            metrics.update({
+                'date': datetime,
+                'recorded': recorded_vars,
+                'portfolio': dbutils.portfolio_to_dict(portfolio)
+            })
 
-        self._last_price = portfolio.portfolio_value
+            log.debug('Saving metrics in database')
+            log.debug(
+                rdb.table(self.table)
+                   .insert(metrics)
+                   .run(self.session)
+            )
 
     def save_quotes(self, table, data, metadata={}, reset=False):
         table = datautils.clean_sid(table)
@@ -171,12 +165,12 @@ class RethinkdbFinance(RethinkdbBackend):
         if start:
             start = rdb.epoch_time(dna.time_utils.UTC_date_to_epoch(start))
         if end:
-            #TODO Give a notice when given end is > database end
+            # TODO Give a notice when given end is > database end
             end = rdb.epoch_time(dna.time_utils.UTC_date_to_epoch(end))
         else:
             end = rdb.now()
         if select == 'ohlc':
-            #TODO Handle 'adjusted_close'
+            # TODO Handle 'adjusted_close'
             select = ['open', 'high', 'low', 'close', 'volume']
         if not isinstance(select, list):
             select = [select]
@@ -220,7 +214,7 @@ class Keeper(object):
         end = dt.date.today()
         self.reset = False
 
-        log.info('downloading {} data ({} -> {})'.format(sids, start, end), 4)
+        log.info('downloading {} data ({} -> {})'.format(sids, start, end))
         self._download_and_store(sids, start, end)
 
     def _download_and_store(self, sids, start, end):

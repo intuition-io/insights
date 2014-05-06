@@ -9,7 +9,7 @@
   :license: Apache 2.0, see LICENSE for more details.
 '''
 
-from zipline.utils.factory import load_from_yahoo, load_bars_from_yahoo
+import zipline.utils.factory as factory
 
 
 class YahooPrices(object):
@@ -30,7 +30,7 @@ class YahooPrices(object):
         }
 
     def get_data(self, sids, start, end):
-        return load_from_yahoo(
+        return factory.load_from_yahoo(
             stocks=sids, indexes={}, start=start, end=end)
 
 
@@ -56,7 +56,7 @@ class YahooOHLC(object):
         }
 
     def get_data(self, sids, start, end):
-        data = load_bars_from_yahoo(
+        data = factory.load_bars_from_yahoo(
             stocks=sids, indexes={}, start=start, end=end)
         self.sids = data.items
         return data

@@ -31,7 +31,6 @@ class Forex(object):
 
     def get_data(self, sids):
         while True:
-            # TODO Automatically reconnect when more than 2 minutes elapsed
             rates = self.forex.query_rates()
             if len(rates.keys()) >= len(sids):
                 log.debug('Data available for {}'.format(rates.keys()))
@@ -42,8 +41,6 @@ class Forex(object):
             debug_feedback = self.forex.connect()
             log.info('New Truefx connection: {}'.format(debug_feedback))
 
-        # TODO TrueFX class should do that
-        #rates.columns = map(str.lower, rates.columns)
         return rates
 
     @property

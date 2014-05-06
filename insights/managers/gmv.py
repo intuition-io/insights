@@ -35,8 +35,8 @@ class GlobalMinimumVariance(PortfolioFactory):
     parameters:
       partial_sale: Percentage of the stock amount to sell [default 1]
     '''
-    def initialize(self, config):
-        self.partial_sell = config.get('partial_sell', 1.0)
+    def initialize(self, properties):
+        self.partial_sell = properties.get('partial_sell', 1.0)
 
     def optimize(self, to_buy, to_sell):
 
@@ -49,6 +49,7 @@ class GlobalMinimumVariance(PortfolioFactory):
                 self.portfolio.positions[sid].amount * self.partial_sell))
 
         if to_buy:
+            # TODO If the universe is large enough, limit `returns` to `to_buy`
             returns = self.properties.get('historical_prices')
             # NOTE if returns.isnull().any().any(): ?
             if returns is None:

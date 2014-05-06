@@ -33,7 +33,7 @@ class Random(object):
     def _feed_random_data(self):
         return {
             'price': 100 * random.random(),
-            'volume': 10000 * random.random()
+            'volume': random.randrange(1000, 10000)
         }
 
     def get_data(self, sids):

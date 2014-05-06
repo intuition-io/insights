@@ -14,25 +14,45 @@ import intuition.data.remote as remote
 
 class Stocks(object):
     '''
-    At each event datetime of the provided index, FakeLiveSource
-    generates random prices
+    Download live (or slightly delayed) quotes from Google Finance
     '''
-    def __init__(self, sids, properties):
-        pass
 
-    @property
-    def mapping(self):
-        return {
-            'dt': (lambda x: x, 'dt'),
-            'sid': (lambda x: x, 'sid'),
+    _specific_mapping = {
+        'google': {
             'price': (float, 'price'),
             'change': (float, 'perc_change'),
             'volume': (lambda x: int(10001), 'price'),
+        },
+        # NOTE short_ration also available but often returned as NaN
+        'yahoo': {
+            'price': (float, 'last'),
+            'change': (float, 'change_pct'),
+            'pe': (float, 'PE'),
+            'volume': (lambda x: int(10001), 'last'),
         }
+    }
+
+    def __init__(self, sids, properties):
+        self._source = properties.get('source', 'google')
+        self._mapping = {
+            'dt': (lambda x: x, 'dt'),
+            'sid': (lambda x: x, 'sid'),
+        }
+        if self._source in self._specific_mapping.keys():
+            self._mapping.update(self._specific_mapping[self._source])
+        else:
+            raise ValueError('{} source not available.'.format(self._source))
+
+    @property
+    def mapping(self):
+        self._mapping
 
     def get_data(self, sids):
         # FIXME No volume information with this method
-        snapshot = remote.snapshot_google(symbols=sids)
+        if self._source == 'google':
+            snapshot = remote.snapshot_google(symbols=sids)
+        elif self._source == 'yahoo':
+            snapshot = remote.snapshot_yahoo_pandas(symbols=sids)
 
         if snapshot.empty:
             raise ValueError('no equities data available')

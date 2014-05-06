@@ -16,7 +16,7 @@ from intuition.data.quandl import DataQuandl
 
 
 # NOTE It would be cool if this class could inherit from the one above
-class AugmentedRethinkdb(object):
+class RethinkdbBackedByQuandl(object):
     '''
     doc: Fetch quotes from a <a href="http://rethinkdb.com/">Rethinkdb</a>
       database. If not found, it will try to download it from <a

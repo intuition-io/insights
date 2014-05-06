@@ -8,12 +8,8 @@ from nose.tools import ok_, nottest
 import pytz
 import pandas as pd
 import datetime as dt
-from random import random
+import random
 import yaml
-#from intuition.api.datafeed import HybridDataFactory
-#from intuition.data.universe import Market
-# TODO Use FakeDataSource when available
-#from insights.sources.backtest.yahoo import YahooPrices
 import zipline.protocol
 from dna.test_utils import setup_logger, teardown_logger
 
@@ -25,12 +21,35 @@ def _generate_sid_data(sid):
         'sid': sid,
         'dt': pd.tslib.Timestamp('2012/06/05', tz=pytz.utc),
         'datetime': pd.tslib.Timestamp('2012/06/05', tz=pytz.utc),
-        'price': random() * 10,
-        'volume': random() * 1000
+        'price': random.random() * 10,
+        'volume': random.random() * 1000
     }
 
 
-#pylint: disable=R0921
+def generate_fake_returns(sids):
+    dates = pd.date_range('2012/01/01', '2012/06/01', tz=pytz.utc)
+    return pd.DataFrame(
+        {sid: [random.random() * 100 for _ in range(len(dates))]
+            for sid in sids},
+        index=dates
+    )
+
+
+def generate_fake_portfolio(sids):
+    pf = zipline.protocol.Portfolio()
+    for sid in sids:
+        pf.positions[sid] = zipline.protocol.Position(sid)
+        pf.positions[sid].amount = random.randint(1, 100)
+        cost = random.randrange(1, 200)
+        pf.positions[sid].cost_basis = cost
+        pf.positions[sid].last_sale_price = random.randrange(
+            int(cost), int(cost + 1000 * random.random())
+        )
+
+    return pf
+
+
+# pylint: disable=R0921
 class FactoryAlgorithmTestCase(unittest.TestCase):
     '''
     New algorithm tests inherit from this factory class. The main idea is to
@@ -60,7 +79,6 @@ class FactoryAlgorithmTestCase(unittest.TestCase):
 
     def _check_signal_sid(self, sid_data):
         self.assertIsInstance(sid_data, zipline.protocol.SIDData)
-        #for info in ['volume', 'price', 'dt', 'type', 'sid']:
         for info in _generate_sid_data('').keys():
             self.assertIn(info, sid_data)
 
@@ -72,7 +90,7 @@ class FactoryAlgorithmTestCase(unittest.TestCase):
                     self._check_signal_sid(signals[signal_type][sid])
 
 
-#pylint: disable=R0921
+# pylint: disable=R0921
 class FactoryManagerTestCase(unittest.TestCase):
     '''
     This abstract factory class targets the same achievements as the
@@ -84,8 +102,9 @@ class FactoryManagerTestCase(unittest.TestCase):
     def setUp(self):
         setup_logger(self)
         self.some_date = dt.datetime(2014, 04, 10)
-        # TODO Use true portfolio positions
         self.buy_signal = {'goog': 34}
+        self.test_sids = ['goog', 'aapl', 'msft']
+        self.test_pf = generate_fake_portfolio(self.test_sids)
 
     def tearDown(self):
         teardown_logger(self)

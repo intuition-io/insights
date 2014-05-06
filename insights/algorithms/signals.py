@@ -10,7 +10,7 @@
 '''
 
 import collections
-from zipline.transforms.ta import RSI
+import zipline.transforms.ta as ta
 import insights.transforms as transforms
 import insights.plugins.mail as mail
 from intuition.api.algorithm import TradingFactory
@@ -50,7 +50,7 @@ class RSIWithMA(TradingFactory):
         self.period = properties.get('period', 14)
 
         # RSI Signal
-        self.rsi = RSI(timeperiod=self.period)
+        self.rsi = ta.RSI(timeperiod=self.period)
 
         # Quotes loopback for managers
         self.prices_transform = transforms.get_past_prices(
@@ -63,10 +63,7 @@ class RSIWithMA(TradingFactory):
         self.under_priced = {sid: False for sid in data}
 
     def event(self, data):
-        #signals = {
-            #'buy': collections.OrderedDict(),
-            #'sell': collections.OrderedDict()
-        #}
+        self.logger.debug('Processing event on {}'.format(self.get_datetime()))
         signals = {}
 
         rsi_data = self.rsi.handle_data(data)
@@ -75,6 +72,7 @@ class RSIWithMA(TradingFactory):
             return signals
 
         self.manager.advise(historical_prices=loopback_prices)
+        self.logger.debug('Historical data available')
 
         ranked = {}
         banked = {}

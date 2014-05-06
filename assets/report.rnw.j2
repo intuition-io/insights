@@ -66,11 +66,16 @@
 \hrulefill
 
 \begin{abstract}
-Strategy summary and notification context go here.
+Strategy summary and notification context go here.\newline
+
+Report generated at {{ metrics.date }}, based on an initial capital of
+{{ metrics.capital_base }} dollars (id: {{ metrics.id }} - {{ metrics.progress }} ).
+
 \end{abstract}
 
 \section{\Huge {{ strategy_name }} Performance Overview}
-Portfolio and order book details go here.
+Portfolio and order book details go here.\newline
+
 
 {% for stock in orderbook %}
   \newpage
