@@ -82,7 +82,7 @@ class DualMovingAverage(TradingFactory):
 # https://www.quantopian.com/posts/this-is-amazing
 '''
 class Momentum(TradingFactory):
-    #FIXME Too much transactions, can't handle it on wide universe
+    # FIXME Too much transactions, can't handle it on wide universe
     def initialize(self, properties):
         # Interactive, mobile, hipchat, database and commission middlewares
         for middleware in common_middlewares(properties, self.identity):

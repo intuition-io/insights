@@ -15,10 +15,26 @@ import time
 import codecs
 import requests
 import jinja2
-import insights.analysis as analysis
 import dna.logging
+import intuition.data.remote as remote
+import insights.analysis as analysis
 
 log = dna.logging.logger(__name__)
+
+
+def human_sid(symbol):
+    sid = remote.lookup_symbol(symbol)
+    if len(sid):
+        human_fmt = '{} {} - {} ({})'.format(
+            sid[0]['name'],
+            sid[0]['typeDisp'],
+            sid[0]['exchDisp'],
+            sid[0]['symbol']
+        )
+    else:
+        human_fmt = symbol
+
+    return human_fmt
 
 
 # TODO Get some inspiration: http://godoc.org/github.com/riobard/go-mailgun
@@ -35,7 +51,11 @@ class Mailgun(object):
         self.from_email = '{} <me@{}>'.format(friendly_name, domain)
         self._api_url = self._api_url.format(domain)
 
-    def send(self, targets, subject, body, attachment=None):
+    def send(self, targets, subject, body, attachments=None):
+        attachments = attachments or []
+        attachments = [
+            ('attachment', open(filename, 'rb')) for filename in attachments
+        ]
         if isinstance(targets, str):
             targets = [targets]
         payload = {
@@ -44,25 +64,20 @@ class Mailgun(object):
             'subject': subject,
             'html': body
         }
-        if attachment:
-            # TODO Support multiple attachments
-            feedback = requests.post(
-                self._api_url,
-                files=[('attachment', open(attachment))],
-                auth=('api', self._api_key),
-                data=payload)
-        else:
-            feedback = requests.post(
-                self._api_url,
-                auth=('api', self._api_key),
-                data=payload)
+        # TODO Support multiple attachments
+        feedback = requests.post(
+            self._api_url,
+            files=attachments,
+            auth=('api', self._api_key),
+            data=payload
+        )
         return feedback
 
 
 class Report(Mailgun):
     ''' Sent mail reports about the situation '''
 
-    asset_dir = os.path.expanduser('~/.intuition/assets/')
+    _asset_dir = os.path.expanduser('~/.intuition/assets/')
     report_name = 'report.rnw'
     mail_name = 'mail-template.html'
 
@@ -78,17 +93,18 @@ class Report(Mailgun):
             loader=jinja2.FileSystemLoader(self._asset_dir))
 
     def _render_report_template(
-            self, identity, orderbook, metrics, benchmark='GSPC'):
+            self, summary, orderbook, metrics, benchmark='GSPC'):
         stocks = []
-        for sid, quantity in orderbook.iteritems():
+        for sid, infos in orderbook.iteritems():
             stocks.append({
-                'action': 'Buy' if quantity > 0 else 'Sell',
-                'quantity': abs(quantity),
-                'name': sid.upper()
+                'action': 'Buy' if infos['value'] > 0 else 'Sell',
+                'quantity': abs(infos['value']),
+                'name': sid,
+                'symbol': infos['symbol'].upper()
             })
         template = self.template_env.get_template(self.report_name + '.j2')
         return template.render(
-            strategy_name=identity,
+            summary=summary,
             start_date='2013/11/01',
             benchmark=benchmark,
             orderbook=stocks,
@@ -97,10 +113,10 @@ class Report(Mailgun):
 
     def _render_email_template(self, identity, orderbook):
         completion = []
-        for sid, quantity in orderbook.iteritems():
+        for sid, infos in orderbook.iteritems():
             completion.append({
-                'action': 'Buy' if quantity > 0 else 'Sell',
-                'quantity': abs(quantity),
+                'action': 'Buy' if infos['value'] > 0 else 'Sell',
+                'quantity': abs(infos['value']),
                 'equity': sid
             })
         template = self.template_env.get_template(self.mail_name + '.j2')
@@ -113,18 +129,30 @@ class Report(Mailgun):
     def is_allowed(self):
         return time.time() - self._last_send > 30.0
 
-    def send_briefing(self, identity, orderbook, metrics):
+    def send_briefing(self, __class__, manager, identity, orderbook, metrics):
         # TODO Portfolio summary
         if orderbook and self.is_allowed:
             self._last_send = time.time()
+            identity = identity.capitalize()
+            orderbook = {
+                human_sid(sid): {'symbol': sid, 'value': value}
+                for sid, value in orderbook.iteritems()
+            }
 
-            # TODO catch errors
+            # TODO __class__ output is not friendly
+            summary = {
+                'identity': identity,
+                'algorithm': __class__.__name__,
+                'manager': manager.__class__.__name__ if manager else None
+            }
             log.info('generating report template')
+            # TODO catch errors
             report = self._render_report_template(
-                identity, orderbook, metrics
+                summary, orderbook, metrics
             )
             fd = codecs.open(
-                self._asset_dir + self.report_name, 'w', 'utf-8')
+                self._asset_dir + self.report_name, 'w', 'utf-8'
+            )
             fd.write(report)
             fd.close()
 
@@ -134,7 +162,8 @@ class Report(Mailgun):
                 targets=self.targets,
                 subject='{} notification'.format(identity),
                 body=self._render_email_template(identity, orderbook),
-                attachment="report.pdf")
+                attachments=['assets/legal_notice.txt', 'report.pdf']
+            )
             log.debug(feedback.json())
 
             self.generator.clean(everything=False)
