@@ -42,11 +42,15 @@ def generate_fake_returns(sids):
     )
 
 
-def generate_fake_portfolio(sids):
+def generate_portfolio(sids):
+    ''' Build a random, zipline compliant portfolio '''
     pf = zipline.protocol.Portfolio()
-    for sid in sids:
+    if isinstance(sids, list):
+        sids = {sid: random.randint(1, 100) for sid in sids}
+
+    for sid, amount in sids.iteritems():
         pf.positions[sid] = zipline.protocol.Position(sid)
-        pf.positions[sid].amount = random.randint(1, 100)
+        pf.positions[sid].amount = amount
         cost = random.randrange(1, 200)
         pf.positions[sid].cost_basis = cost
         pf.positions[sid].last_sale_price = random.randrange(
@@ -111,7 +115,7 @@ class FactoryManagerTestCase(unittest.TestCase):
         self.some_date = dt.datetime(2014, 04, 10)
         self.buy_signal = {'goog': 34}
         self.test_sids = ['goog', 'aapl', 'msft']
-        self.test_pf = generate_fake_portfolio(self.test_sids)
+        self.test_pf = generate_portfolio(self.test_sids)
 
     def tearDown(self):
         teardown_logger(self)

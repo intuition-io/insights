@@ -54,16 +54,15 @@ class RSIWithMA(TradingFactory):
 
         # Quotes loopback for managers
         self.prices_transform = transforms.get_past_prices(
-            #refresh_period=10,
             window_length=properties.get('window', 40),
-            compute_only_full=properties.get('only_full'))
+            compute_only_full=properties.get('only_full')
+        )
 
     def warm(self, data):
         self.over_priced = {sid: False for sid in data}
         self.under_priced = {sid: False for sid in data}
 
     def event(self, data):
-        self.logger.debug('Processing event on {}'.format(self.get_datetime()))
         signals = {}
 
         rsi_data = self.rsi.handle_data(data)
@@ -72,26 +71,45 @@ class RSIWithMA(TradingFactory):
             return signals
 
         self.manager.advise(historical_prices=loopback_prices)
-        self.logger.debug('Historical data available')
 
         ranked = {}
         banked = {}
+        recorded_state = {}
         for sid in data:
             rsi = rsi_data[sid]
+            # NOTE portfolio:positions:<sid>:amount
+            recorded_state[sid] = {
+                'price': data[sid].price,
+                'rsi': rsi
+            }
             if rsi < self.sell_trigger and self.over_priced[sid]:
+                recorded_state[sid]['msg'] = (
+                    'Selling {}: RSI crossed down sell trigger ({} < {})'
+                    .format(sid, rsi, self.sell_trigger)
+                )
                 banked[sid] = rsi
                 self.over_priced[sid] = False
 
-            elif rsi > self.sell_trigger \
-                    and not self.over_priced[sid]:
+            elif rsi > self.sell_trigger and not self.over_priced[sid]:
+                recorded_state[sid]['msg'] = (
+                    '{} is now overpriced ({} > {})'
+                    .format(sid, rsi, self.sell_trigger)
+                )
                 self.over_priced[sid] = True
 
             elif rsi > self.buy_trigger and self.under_priced[sid]:
+                recorded_state[sid]['msg'] = (
+                    'Buying {}: RSI crossed up "buy trigger" ({} > {})'
+                    .format(sid, rsi, self.buy_trigger)
+                )
                 ranked[sid] = rsi
                 self.under_priced[sid] = False
 
-            elif rsi < self.buy_trigger \
-                    and not self.under_priced[sid]:
+            elif rsi < self.buy_trigger and not self.under_priced[sid]:
+                recorded_state[sid]['msg'] = (
+                    '{} is now underpriced ({} < {})'
+                    .format(sid, rsi, self.buy_trigger)
+                )
                 self.under_priced[sid] = True
 
         signals['buy'] = collections.OrderedDict(
@@ -101,4 +119,5 @@ class RSIWithMA(TradingFactory):
             {sid: data[sid] for sid, _ in sorted(
                 banked.items(), key=lambda t: t[1])})
 
+        self.record(**recorded_state)
         return signals

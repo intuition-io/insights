@@ -77,7 +77,7 @@ class Mailgun(object):
 class Report(Mailgun):
     ''' Sent mail reports about the situation '''
 
-    _asset_dir = os.path.expanduser('~/.intuition/assets/')
+    _assets_dir = os.path.expanduser('~/.intuition/assets/')
     report_name = 'report.rnw'
     mail_name = 'mail-template.html'
 
@@ -90,10 +90,10 @@ class Report(Mailgun):
         log.info('Mail report ready', recipients=targets)
 
         self.template_env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(self._asset_dir))
+            loader=jinja2.FileSystemLoader(self._assets_dir))
 
     def _render_report_template(
-            self, summary, orderbook, metrics, benchmark='GSPC'):
+            self, summary, orderbook, metrics, benchmark='FCHI'):
         stocks = []
         for sid, infos in orderbook.iteritems():
             stocks.append({
@@ -129,7 +129,8 @@ class Report(Mailgun):
     def is_allowed(self):
         return time.time() - self._last_send > 30.0
 
-    def send_briefing(self, __class__, manager, identity, orderbook, metrics):
+    def send_briefing(
+            self, __class__, manager, identity, orderbook, perf_tracker):
         # TODO Portfolio summary
         if orderbook and self.is_allowed:
             self._last_send = time.time()
@@ -148,10 +149,10 @@ class Report(Mailgun):
             log.info('generating report template')
             # TODO catch errors
             report = self._render_report_template(
-                summary, orderbook, metrics
+                summary, orderbook, perf_tracker
             )
             fd = codecs.open(
-                self._asset_dir + self.report_name, 'w', 'utf-8'
+                self._assets_dir + self.report_name, 'w', 'utf-8'
             )
             fd.write(report)
             fd.close()
@@ -162,7 +163,10 @@ class Report(Mailgun):
                 targets=self.targets,
                 subject='{} notification'.format(identity),
                 body=self._render_email_template(identity, orderbook),
-                attachments=['assets/legal_notice.txt', 'report.pdf']
+                attachments=[
+                    self._assets_dir + 'legal_notice.txt',
+                    'report.pdf'
+                ]
             )
             log.debug(feedback.json())
 

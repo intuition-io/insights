@@ -7,12 +7,12 @@ from intuition.api.portfolio import PortfolioFactory
 
 def compute_weigths(daily_returns):
     try:
-        #create a covariance matrix
+        # create a covariance matrix
         covariance_matrix = np.cov(daily_returns, y=None, rowvar=1,
                                    bias=0, ddof=None)
         covariance_matrix = np.matrix(covariance_matrix)
 
-        #calculate global minimum portfolio weights
+        # calculate global minimum portfolio weights
         one_vector = np.matrix(np.ones(len(daily_returns))).transpose()
         one_row = np.matrix(np.ones(len(daily_returns)))
         covariance_matrix_inv = np.linalg.inv(covariance_matrix)
@@ -37,12 +37,14 @@ class GlobalMinimumVariance(PortfolioFactory):
     '''
     def initialize(self, properties):
         self.partial_sell = properties.get('partial_sell', 1.0)
+        self.log.info(properties)
 
     def optimize(self, to_buy, to_sell):
 
         allocations = {}
 
         # Simply sell
+        # NOTE It will be overwritten if we had buy signals
         for sid in to_sell:
             # NOTE Cannot go short in this configuration
             allocations[sid] = - int(round(

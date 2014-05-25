@@ -21,19 +21,20 @@ class Stocks(object):
         'google': {
             'price': (float, 'price'),
             'change': (float, 'perc_change'),
-            'volume': (lambda x: int(10001), 'price'),
+            'volume': (lambda x: int(10001), 'price')
         },
         # NOTE short_ration also available but often returned as NaN
         'yahoo': {
             'price': (float, 'last'),
-            'change': (float, 'change_pct'),
-            'pe': (float, 'PE'),
-            'volume': (lambda x: int(10001), 'last'),
+            # NOTE Often to N/A outside US
+            # 'change': (float, 'change_pct'),
+            # 'pe': (float, 'PE'),
+            'volume': (lambda x: int(10001), 'last')
         }
     }
 
     def __init__(self, sids, properties):
-        self._source = properties.get('source', 'google')
+        self._source = properties.get('source', 'yahoo')
         self._mapping = {
             'dt': (lambda x: x, 'dt'),
             'sid': (lambda x: x, 'sid'),
@@ -45,7 +46,7 @@ class Stocks(object):
 
     @property
     def mapping(self):
-        self._mapping
+        return self._mapping
 
     def get_data(self, sids):
         # FIXME No volume information with this method

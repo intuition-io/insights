@@ -31,7 +31,7 @@ class RethinkdbBackedByQuandl(object):
 
     def __init__(self, sids, properties):
         ''' Combine rethinkdb and quandl backends '''
-        # Should save datafames downloaded from quandl ?
+        # Should save dataframes downloaded from quandl ?
         self._save_missing_data = properties.get('save_missing')
         # Allow downloads ?
         self._offline = properties.get('offline')

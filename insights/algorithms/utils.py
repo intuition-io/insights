@@ -20,13 +20,16 @@ def common_middlewares(properties, identity):
 
     if properties.get('interactive'):
         middlewares.append(msg.RedisProtocol(identity).check)
+
     device = properties.get('mobile')
     if device:
         middlewares.append(mobile.AndroidPush(device).notify)
+
     if properties.get('save'):
         middlewares.append(database.RethinkdbFinance(
             table=identity, db='portfolios', reset=True)
             .save_portfolio)
+
     hipchat_room = properties.get('hipchat')
     if hipchat_room:
         middlewares.append(hipchat.Bot(

@@ -4,12 +4,12 @@ python:
 
 before_install:
   - sudo apt-get -y install python-pip python-dev g++ make libfreetype6-dev libpng-dev libopenblas-dev liblapack-dev gfortran r-base libssl-dev libreadline-dev
-  - pip install --quiet --use-mirrors numpy cython
+  - pip install --quiet numpy
+  - mkdir -p $HOME/.intuition/{assets,data,logs,R} && touch $HOME/.intuition/logs/MANIFEST.in
 
 install:
-  - pip install -e git+https://github.com/hackliff/intuition.git@develop#egg=intuition
   - python setup.py install
-  - pip install --use-mirrors -r dev-requirements.txt
+  - pip install --upgrade -r dev-requirements.txt
 
 before_script:
   - mkdir -p shippable/codecoverage shippable/testresults

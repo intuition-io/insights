@@ -9,7 +9,6 @@
   :license: Apache 2.0, see LICENSE for more details.
 '''
 
-
 from intuition.api.portfolio import PortfolioFactory
 
 

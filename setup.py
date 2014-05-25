@@ -24,14 +24,13 @@ requires = [
     'python-etcd>=0.3.0',
     'redis>=2.9.1',
     'rpy2>=2.3.10',
-    'pymongo>=2.7',
+    'pymongo>=2.7.1',
     'PyYAML>=3.11',
-    'requests>=2.2.1',
-    'rethinkdb>=1.12.0-1',
-    'scipy==0.14.0',
-    'pandas==0.13.1',
-    'influxdb>=0.1.6',
-    'intuition>=0.4.0'
+    'rethinkdb>=1.12.0-2',
+    'scipy>=0.14.0',
+    'pandas>=0.13.1',
+    'influxdb>=0.1.7',
+    'intuition>=0.4.2'
 ]
 
 
