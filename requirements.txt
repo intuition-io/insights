@@ -1,11 +1,19 @@
-patsy==0.2.1
+patsy==0.3.0
 clint==0.3.7
 python-etcd==0.3.0
-redis==2.9.1
-rpy2==2.4.0
+redis==2.10.1
+rpy2==2.4.2
 pymongo==2.7.1
 PyYAML==3.11
 rethinkdb==1.12.0-2
-influxdb==0.1.7
+influxdb==0.1.11
 scipy==0.14.0
-intuition==0.4.2
+intuition==0.4.3
+scikit-learn==0.15.0
+
+# Cython is required for TA-Lib
+Cython==0.20.2
+# This --allow syntax is for compatibility with pip >= 1.5
+# However, this is backwards incompatible change, since previous
+# versions of pip do not support that flag.
+--allow-external TA-Lib --allow-unverified TA-Lib TA-Lib==0.4.8

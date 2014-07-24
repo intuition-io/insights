@@ -78,11 +78,6 @@ class RethinkdbBackend(object):
             .pluck(['date'])\
             .run(self.session)[0]
 
-    #def __del__(self):
-        #FIXME RqlClientError(u'MALFORMED PROTOBUF (missing field
-        #`type`):\ntoken: 508\n1: 4\n5: 1\n')
-        #self.session.close()
-
 
 class RethinkdbFinance(RethinkdbBackend):
     '''
@@ -161,7 +156,6 @@ class RethinkdbFinance(RethinkdbBackend):
         return data
 
     def quotes(self, sids, start=None, end=None, select=[]):
-        #sids = map(str.lower, map(str, sids))
         if start:
             start = rdb.epoch_time(dna.time_utils.UTC_date_to_epoch(start))
         if end:
@@ -219,7 +213,8 @@ class Keeper(object):
 
     def _download_and_store(self, sids, start, end):
         data = self.feed.fetch(
-            sids, start=start, end=end, returns='pandas')
+            sids, start=start, end=end, returns='pandas'
+        )
 
         for sid in data:
             try:

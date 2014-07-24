@@ -9,7 +9,6 @@
   :license: Apache 2.0, see LICENSE for more details.
 '''
 
-
 import os
 import time
 import codecs
@@ -42,14 +41,13 @@ class Mailgun(object):
     '''
     Send emails through mailgun api
     '''
-    _api_url = 'https://api.mailgun.net/v2/{}/messages'
-    _api_key = ''
+    _api_tpl = 'https://api.mailgun.net/v2/{}/messages'
 
     def __init__(self, friendly_name):
         self._api_key = os.environ.get('MAILGUN_API_KEY')
         domain = os.environ.get('MAILGUN_DOMAIN')
         self.from_email = '{} <me@{}>'.format(friendly_name, domain)
-        self._api_url = self._api_url.format(domain)
+        self._api_url = self._api_tpl.format(domain)
 
     def send(self, targets, subject, body, attachments=None):
         attachments = attachments or []

@@ -33,17 +33,13 @@ nosetests.xml
 # Translations
 *.mo
 
-# Mr Developer
-.mr.developer.cfg
-.project
-.pydevproject
-
 # Rope
 .ropeproject
 
+authtoken.p
 # Not ready
 optimization/*
-authtoken.p
 R/reports
 etcd-setup.sh
 bkp.README.md
+insights/managers/kelly.py

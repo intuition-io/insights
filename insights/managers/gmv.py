@@ -52,11 +52,12 @@ class GlobalMinimumVariance(PortfolioFactory):
 
         if to_buy:
             # TODO If the universe is large enough, limit `returns` to `to_buy`
-            returns = self.properties.get('historical_prices')
+            # NOTE For generic purpose, should take historical_prices ?
+            returns = self.properties.get('historical_returns')
             # NOTE if returns.isnull().any().any(): ?
             if returns is None:
                 # TODO A fallback
-                raise NotImplementedError('GMV manager needs history prices')
+                raise NotImplementedError('GMV manager needs history returns')
 
             weights = compute_weigths(returns.transpose())
             if np.isnan(weights).any() or not weights.any():

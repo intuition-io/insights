@@ -12,25 +12,25 @@
 
 import os
 from glob import glob
-from setuptools import setup, find_packages
-
+import multiprocessing
+import setuptools
 from insights import __version__, __author__, __licence__
 
 
-requires = [
-    'numpy>=1.8.1',
-    'patsy>=0.2.1',
-    'clint>=0.3.7',
-    'python-etcd>=0.3.0',
-    'redis>=2.9.1',
-    'rpy2>=2.3.10',
-    'pymongo>=2.7.1',
-    'PyYAML>=3.11',
-    'rethinkdb>=1.12.0-2',
-    'scipy>=0.14.0',
-    'pandas>=0.13.1',
+REQUIREMENTS = [
+    'numpy',
+    'patsy',
+    'clint',
+    'python-etcd',
+    'redis',
+    'rpy2',
+    'pymongo',
+    'PyYAML',
+    'rethinkdb==1.12.0-2',
+    'scipy',
+    'scikit-learn',
     'influxdb>=0.1.7',
-    'intuition>=0.4.2'
+    'intuition>=0.4.3'
 ]
 
 
@@ -41,17 +41,17 @@ def long_description():
     except IOError:
         return "failed to read README.md"
 
-setup(
+setuptools.setup(
     name='insights',
     version=__version__,
     description=('Quantitative algorithms, portfolio managers, '
                  'data sources and contexts for Intuition'),
     author=__author__,
     author_email='xavier.bruhiere@gmail.com',
-    packages=find_packages(),
+    packages=setuptools.find_packages(),
     long_description=long_description(),
     license=__licence__,
-    install_requires=requires,
+    install_requires=REQUIREMENTS,
     url="https://github.com/hackliff/insights",
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',

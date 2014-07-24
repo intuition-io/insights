@@ -21,7 +21,7 @@ class RSIWithMA(TradingFactory):
     '''
     doc: |
       Use The Relative Strengh Indicator to detect signals<br \>
-        - RSI < 70% => sell<br \>
+        - RSI < 60% => sell<br \>
         - RSI > 30% => buy<br \>
       Then check Long and Short Moving averages to confirm:<br />
         - Process if MAs are getting closer'
@@ -39,22 +39,22 @@ class RSIWithMA(TradingFactory):
     def initialize(self, properties):
         # Interactive, mobile, hipchat, database and commission middlewares
         for middleware in common_middlewares(properties, self.identity):
-            self.use(middleware)
+            self.use(middleware['func'], middleware['backtest'])
 
         report_mails = properties.get('reports')
         if report_mails:
             self.use(mail.Report(report_mails).send_briefing)
 
-        self.buy_trigger = properties.get('buy_trigger', 30)
-        self.sell_trigger = properties.get('sell_trigger', 70)
-        self.period = properties.get('period', 14)
+        self.buy_trigger = int(properties.get('buy_trigger', 30))
+        self.sell_trigger = int(properties.get('sell_trigger', 70))
+        self.period = int(properties.get('period', 14))
 
         # RSI Signal
         self.rsi = ta.RSI(timeperiod=self.period)
 
         # Quotes loopback for managers
         self.prices_transform = transforms.get_past_prices(
-            window_length=properties.get('window', 40),
+            window_length=int(properties.get('window', 40)),
             compute_only_full=properties.get('only_full')
         )
 
@@ -77,38 +77,41 @@ class RSIWithMA(TradingFactory):
         recorded_state = {}
         for sid in data:
             rsi = rsi_data[sid]
-            # NOTE portfolio:positions:<sid>:amount
             recorded_state[sid] = {
                 'price': data[sid].price,
-                'rsi': rsi
+                'signals': {
+                    'rsi': rsi,
+                    'low': self.buy_trigger,
+                    'high': self.sell_trigger
+                }
             }
             if rsi < self.sell_trigger and self.over_priced[sid]:
                 recorded_state[sid]['msg'] = (
-                    'Selling {}: RSI crossed down sell trigger ({} < {})'
-                    .format(sid, rsi, self.sell_trigger)
+                    'Selling: RSI crossed down sell trigger ({} < {})'
+                    .format(rsi, self.sell_trigger)
                 )
                 banked[sid] = rsi
                 self.over_priced[sid] = False
 
             elif rsi > self.sell_trigger and not self.over_priced[sid]:
                 recorded_state[sid]['msg'] = (
-                    '{} is now overpriced ({} > {})'
-                    .format(sid, rsi, self.sell_trigger)
+                    'Overpriced ({} > {})'
+                    .format(rsi, self.sell_trigger)
                 )
                 self.over_priced[sid] = True
 
             elif rsi > self.buy_trigger and self.under_priced[sid]:
                 recorded_state[sid]['msg'] = (
-                    'Buying {}: RSI crossed up "buy trigger" ({} > {})'
-                    .format(sid, rsi, self.buy_trigger)
+                    'Buying: RSI crossed up "buy trigger" ({} > {})'
+                    .format(rsi, self.buy_trigger)
                 )
                 ranked[sid] = rsi
                 self.under_priced[sid] = False
 
             elif rsi < self.buy_trigger and not self.under_priced[sid]:
                 recorded_state[sid]['msg'] = (
-                    '{} is now underpriced ({} < {})'
-                    .format(sid, rsi, self.buy_trigger)
+                    'Underpriced ({} < {})'
+                    .format(rsi, self.buy_trigger)
                 )
                 self.under_priced[sid] = True
 
@@ -120,4 +123,5 @@ class RSIWithMA(TradingFactory):
                 banked.items(), key=lambda t: t[1])})
 
         self.record(**recorded_state)
+
         return signals

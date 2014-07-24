@@ -1,0 +1,45 @@
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
+
+'''
+  {{ title }}
+  -----------
+
+  ... Explanation ...
+
+  :copyright (c) 2014 Xavier Bruhiere
+  :license: Apache 2.0, see LICENSE for more details.
+'''
+
+from intuition.api.algorithm import TradingFactory
+from insights.algorithms.utils import common_middlewares
+
+
+# NOTE Use historical prices per default ?
+# NOTE Use ordered dict per default ?
+# NOTE Add log per default ?
+class {{ module }}(TradingFactory):
+    '''
+    doc: |
+      ...
+    parameters:
+      ...
+    '''
+
+    def initialize(self, properties):
+        # Interactive, mobile, hipchat, database and commission middlewares
+        for middleware in common_middlewares(properties, self.identity):
+            self.use(middleware)
+
+    def warm(self, data):
+        pass
+
+    def event(self, data):
+        signals = {}
+        recorded_state = {}
+
+        for sid in data:
+            continue
+
+        self.record(**recorded_state)
+        return signals

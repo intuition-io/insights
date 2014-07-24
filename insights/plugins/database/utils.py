@@ -28,4 +28,6 @@ def portfolio_to_dict(portfolio):
     if json_pf['positions']:
         for sid, infos in portfolio.positions.iteritems():
             json_pf['positions'][sid] = infos.__dict__
+    # TODO More generic : remove functions type
+    json_pf.pop('_objective', None)
     return json_pf

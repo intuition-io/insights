@@ -36,7 +36,8 @@ class GmvManagerTestCase(FactoryManagerTestCase):
 
     def test_buy_signals(self):
         manager = gmv.GlobalMinimumVariance()
-        manager.advise(historical_prices=generate_fake_returns(self.test_sids))
+        manager.advise(
+            historical_returns=generate_fake_returns(self.test_sids))
         alloc, _, _ = manager.optimize({'goog': 45.6}, {})
         ok_(alloc)
         for sid, weigh in alloc.iteritems():

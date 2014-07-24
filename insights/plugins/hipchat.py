@@ -9,7 +9,6 @@
   :license: Apache 2.0, see LICENSE for more details.
 '''
 
-
 import os
 import requests
 import dna.logging
@@ -25,9 +24,10 @@ class Bot(object):
 
     api_key = os.environ.get('HIPCHAT_API')
     api_url = 'https://api.hipchat.com/v1'
+    # NOTE Use algo.identity
     name = 'Intuition Bot'
     bg_color = 'green'
-    intro = 'Hey guys, I detected an opportunity'
+    intro = 'Hey guys, I detected an opportunity !'
 
     def __init__(self, room_id, name=None, api_key=None):
         self.room_id = room_id

@@ -50,10 +50,9 @@ class RethinkdbBackedByQuandl(object):
         if self._select:
             self.mapping_choice = 'whatever_dataframe'
         else:
-            if properties['universe'].exchange == 'forex':
+            if properties['universe'].exchange.find('forex') > 0:
                 self.mapping_choice = 'forex_panel'
             else:
-                #if properties['universe'].exchange.find('paris') > 0:
                 self.mapping_choice = 'stock_panel'
 
     def _dl_missing_data(self, data, start, end):
@@ -80,7 +79,8 @@ class RethinkdbBackedByQuandl(object):
 
     def get_data(self, sids, start, end):
         data = self.db.quotes(
-            sids, start=start, end=end, select=copy.copy(self._select))
+            sids, start=start, end=end, select=copy.copy(self._select)
+        )
 
         if self._missing_sids and not self._offline:
             data = self._dl_missing_data(data, start, end)

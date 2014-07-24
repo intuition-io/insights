@@ -18,12 +18,14 @@ class AlgorithmsUtilsTestCase(unittest.TestCase):
     def test_full_common_middlewares(self):
         # TODO For simplicity, rethinkdb is excluded for now
         full_required = {
+            'orders': 'on',
             'save': False,
             'interactive': True,
             'mobile': 'Nexus 5',
             'hipchat': '123456'
         }
         middlewares = utils.common_middlewares(full_required, 'whatever')
-        eq_(len(middlewares), 3)
+        eq_(len(middlewares), 4)
         for middleware in middlewares:
-            ok_(inspect.ismethod(middleware))
+            ok_(inspect.ismethod(middleware['func']))
+            self.assertIsInstance(middleware['backtest'], bool)

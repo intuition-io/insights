@@ -26,13 +26,13 @@ class BuyAndHold(TradingFactory):
     '''
     def initialize(self, properties):
         # Punctual buy signals, except 0 means never
-        self.start_time = properties.get('start_time', 3)
+        self.start_time = int(properties.get('start_time', 3))
         # regularly buy signals
-        self.rate = properties.get('rate', -1)
+        self.rate = int(properties.get('rate', -1))
 
         # Interactive, mobile, hipchat, database and commission middlewares
         for middleware in common_middlewares(properties, self.identity):
-            self.use(middleware)
+            self.use(middleware['func'], middleware['backtest'])
 
     def _check_rate(self):
         return (self.rate > 0) and (self.elapsed_time.days % self.rate == 0)
@@ -59,26 +59,32 @@ class Random(TradingFactory):
     def initialize(self, properties):
 
         for middleware in common_middlewares(properties, self.identity):
-            self.use(middleware)
+            self.use(middleware['func'], middleware['backtest'])
 
-        self.buy_trigger = properties.get(
-            'buy_trigger', random.randint(500, 1000) / 1000.0)
-        self.sell_trigger = properties.get(
-            'sell_trigger', random.randint(0, 500) / 1000.0)
+        self.buy_trigger = float(properties.get(
+            'buy_trigger', random.randint(500, 1000) / 1000.0))
+        self.sell_trigger = float(properties.get(
+            'sell_trigger', random.randint(0, 500) / 1000.0))
 
         # Makes results reproductible
         random.seed(self.identity)
 
     def event(self, data):
         signals = {'buy': {}, 'sell': {}}
+        recorded_state = {}
         # One shot or always buying or regularly
         for sid in data:
             luck = random.random()
+            recorded_state[sid] = {
+                'price': data[sid].price,
+                'luck': luck
+            }
             if luck >= self.buy_trigger:
                 signals['buy'][sid] = data[sid]
             elif luck <= self.sell_trigger:
                 signals['sell'][sid] = data[sid]
 
+        self.record(**recorded_state)
         return signals
 
 
@@ -90,38 +96,38 @@ class RegularRebalance(TradingFactory):
       portfolio strategy a moving window of quotes data.
     parameters:
       rate: Reallocation period [default 10]
-      window: quotes window tracked [default 40]
+      window: quotes window tracked [default 30]
     '''
 
     def initialize(self, properties):
 
         for middleware in common_middlewares(properties, self.identity):
-            self.use(middleware)
+            self.use(middleware['func'], middleware['backtest'])
 
         # Set Max and Min positions in security
         self.max_notional = 1000000.1
         self.min_notional = -1000000.0
 
         # This is the lookback window that the entire algorithm depends on
-        self.refresh_period = properties.get('rate', 10)
+        self.refresh_period = int(properties.get('rate', 10))
         self.returns_transform = transforms.get_past_returns(
             refresh_period=self.refresh_period,
-            window_length=properties.get('window', 40),
-            compute_only_full=True)
+            window_length=int(properties.get('window', 30)),
+            compute_only_full=False)
 
     def event(self, data):
         signals = {'buy': {}, 'sell': {}}
 
-        #get 20 days of prices for each security
+        # Get 20 days of prices for each security
         daily_returns = self.returns_transform.handle_data(data)
 
-        #circuit breaker in case transform returns none
-        #circuit breaker, only calculate every given rate
+        # Circuit breaker in case transform returns none
+        # Circuit breaker, only calculate every given rate
         if (daily_returns is None) or \
                 (self.elapsed_time.days % self.refresh_period is not 0):
             return signals
 
-        #reweight portfolio
+        # Reweight portfolio
         for sid in data:
             signals['buy'][sid] = data[sid]
 

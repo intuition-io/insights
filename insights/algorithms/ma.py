@@ -32,10 +32,10 @@ class DualMovingAverage(TradingFactory):
     def initialize(self, properties):
         # Interactive, mobile, hipchat, database and commission middlewares
         for middleware in common_middlewares(properties, self.identity):
-            self.use(middleware)
+            self.use(middleware['func'], middleware['backtest'])
         report_mails = properties.get('reports')
         if report_mails:
-            self.use(mail.Report(report_mails).send_briefing)
+            self.use(mail.Report(report_mails).send_briefing, False)
 
         long_window = int(properties.get('long_window', 30))
         short_window = int(properties.get('short_window', 0))
@@ -61,58 +61,36 @@ class DualMovingAverage(TradingFactory):
     def event(self, data):
         self.logger.debug('Processing event on {}'.format(self.get_datetime()))
         signals = {'buy': {}, 'sell': {}}
+        recorded_state = {}
 
-        for ticker in data:
-            short_mavg = data[ticker].short_mavg['price']
-            long_mavg = data[ticker].long_mavg['price']
+        for sid in data:
+            short_mavg = data[sid].short_mavg['price']
+            long_mavg = data[sid].long_mavg['price']
+            recorded_state[sid] = {
+                'price': data[sid].price,
+                'signals': {
+                    'short': short_mavg,
+                    'long': long_mavg
+                }
+            }
 
             if short_mavg - long_mavg > self.threshold \
-                    and not self.invested[ticker]:
-                signals['buy'][ticker] = data[ticker]
-                self.invested[ticker] = True
+                    and not self.invested[sid]:
+                signals['buy'][sid] = data[sid]
+                self.invested[sid] = True
+                recorded_state[sid]['msg'] = (
+                    'Buy {}: short ma crossed up threshold ({} - {} > {})'
+                    .format(sid, short_mavg, long_mavg, self.threshold)
+                )
 
             elif short_mavg - long_mavg < -self.threshold \
-                    and self.invested[ticker]:
-                signals['sell'][ticker] = data[ticker]
-                self.invested[ticker] = False
+                    and self.invested[sid]:
+                signals['sell'][sid] = data[sid]
+                self.invested[sid] = False
+                recorded_state[sid]['msg'] = (
+                    'Sell {}: short ma crossed down threshold ({} - {} < {})'
+                    .format(sid, short_mavg, long_mavg, self.threshold)
+                )
 
+        self.record(**recorded_state)
         return signals
-
-
-# https://www.quantopian.com/posts/this-is-amazing
-'''
-class Momentum(TradingFactory):
-    # FIXME Too much transactions, can't handle it on wide universe
-    def initialize(self, properties):
-        # Interactive, mobile, hipchat, database and commission middlewares
-        for middleware in common_middlewares(properties, self.identity):
-            self.use(middleware)
-
-        self.max_notional = 2000.1
-        self.min_notional = -2000.0
-
-        self.max_weight = properties.get('max_weight', 0.2)
-        self.max_exposure = properties.get('max_exposure', self.max_weight)
-
-        self.add_transform(MovingAverage, 'mavg', ['price'],
-                           window_length=properties.get('window', 3))
-
-    def event(self, data):
-        signals = {'buy': {}, 'sell': {}}
-
-        for ticker in data:
-            sma = data[ticker].mavg.price
-            price = data[ticker].price
-            cash = self.portfolio.cash
-            notional = self.portfolio.positions[ticker].amount * price
-            capital_used = self.portfolio.capital_used
-
-            if sma > price and \
-                    notional > -self.max_exposure * (capital_used + cash):
-                signals['sell'][ticker] = data[ticker]
-            elif sma < price and \
-                    notional < self.max_weight * (capital_used + cash):
-                signals['buy'][ticker] = data[ticker]
-
-        return signals
-'''
